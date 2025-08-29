@@ -1,13 +1,13 @@
 --[[
-  ZiaanHub v1.0 (single-file)
-  - Full custom UI (no external UI libs)
+  ZiaanHub Modern v2.0 (single-file)
+  - Full custom animated UI (no external libs)
   - Key System (fetch keys from URL)
-  - Features: WalkSpeed, JumpPower, Infinite Jump, Fly
+  - Features: WalkSpeed (slider), JumpPower (slider), Infinite Jump (toggle), Fly (toggle + speed)
   - Reset defaults, Discord button, Home/Features/About tabs
   - Toggle UI: K
-  NOTE:
-   - Ganti KEY_SOURCE_URL ke Pastebin RAW / GitHub RAW lo
-   - Ganti DISCORD_INVITE ke invite lo
+  Notes:
+   - GANTI KEY_SOURCE_URL & DISCORD_INVITE sesuai milikmu
+   - Clipboard only works if executor exposes setclipboard (KRNL/Synapse etc)
 --]]
 
 -- ============== CONFIG ==============
@@ -19,11 +19,12 @@ local DEFAULT_FLY_SPEED = 60
 local UI_TOGGLE_KEY     = Enum.KeyCode.K
 local NOTIF_TITLE       = "ZiaanHub"
 
--- ============= UTIL / HELPERS ============
+-- ============= SERVICES / HELPERS ============
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
 local setclip = setclipboard or (syn and syn.write_clipboard) or (function() end)
@@ -33,8 +34,8 @@ local function tryCopyToClipboard(text)
         pcall(function()
             game.StarterGui:SetCore("SendNotification", {
                 Title = NOTIF_TITLE;
-                Text = "Link disalin ke clipboard. Paste di browser/Discord.";
-                Duration = 4;
+                Text = "Link disalin ke clipboard.";
+                Duration = 3;
             })
         end)
     else
@@ -42,7 +43,7 @@ local function tryCopyToClipboard(text)
             game.StarterGui:SetCore("SendNotification", {
                 Title = NOTIF_TITLE;
                 Text = "Salin manual: "..text;
-                Duration = 6;
+                Duration = 5;
             })
         end)
     end
@@ -98,11 +99,9 @@ local state = {
     flyVel = nil,
 }
 
--- ensure respawn handling: reapply defaults on character added
 LocalPlayer.CharacterAdded:Connect(function(char)
     task.wait(0.5)
     if state.hasAccess then
-        -- reapply walkjump values
         local hum = char:FindFirstChildOfClass("Humanoid")
         if hum then
             hum.WalkSpeed = state.ws or DEFAULT_WALKSPEED
@@ -120,21 +119,13 @@ local function applyDefaults()
         state.ws = DEFAULT_WALKSPEED
         state.jp = DEFAULT_JUMPPOWER
     end
-
-    -- disable inf jump
-    if state.infJumpConn then
-        state.infJumpConn:Disconnect()
-        state.infJumpConn = nil
-    end
+    if state.infJumpConn then state.infJumpConn:Disconnect(); state.infJumpConn = nil end
     state.infJump = false
-
-    -- disable fly
-    if state.flyConn then state.flyConn:Disconnect() state.flyConn = nil end
-    if state.flyGyro then state.flyGyro:Destroy() state.flyGyro = nil end
-    if state.flyVel then state.flyVel:Destroy() state.flyVel = nil end
+    if state.flyConn then state.flyConn:Disconnect(); state.flyConn = nil end
+    if state.flyGyro then state.flyGyro:Destroy(); state.flyGyro = nil end
+    if state.flyVel then state.flyVel:Destroy(); state.flyVel = nil end
     state.fly = false
-
-    notify("Semua fitur direset ke default.", 4)
+    notify("Semua fitur direset ke default.", 3)
 end
 
 local function setWalkSpeed(v)
@@ -164,7 +155,7 @@ local function setInfiniteJump(enabled)
         end
         notify("Infinite Jump ON", 2)
     else
-        if state.infJumpConn then state.infJumpConn:Disconnect() state.infJumpConn = nil end
+        if state.infJumpConn then state.infJumpConn:Disconnect(); state.infJumpConn = nil end
         notify("Infinite Jump OFF", 2)
     end
 end
@@ -175,7 +166,6 @@ local function setFly(enabled)
     if not hum or not root then return end
 
     if enabled then
-        -- create movers
         local gyro = Instance.new("BodyGyro")
         gyro.P = 9e4
         gyro.MaxTorque = Vector3.new(9e9,9e9,9e9)
@@ -192,7 +182,6 @@ local function setFly(enabled)
 
         hum.PlatformStand = true
 
-        -- safe render connection
         state.flyConn = RunService.RenderStepped:Connect(function()
             if not state.fly or not root or not root.Parent then return end
             local cam = workspace.CurrentCamera
@@ -211,17 +200,15 @@ local function setFly(enabled)
 
         notify("Fly ON (WASD + Space/Shift)", 3)
     else
-        if state.flyConn then state.flyConn:Disconnect() state.flyConn = nil end
-        if state.flyGyro then state.flyGyro:Destroy() state.flyGyro=nil end
-        if state.flyVel then state.flyVel:Destroy() state.flyVel=nil end
+        if state.flyConn then state.flyConn:Disconnect(); state.flyConn = nil end
+        if state.flyGyro then state.flyGyro:Destroy(); state.flyGyro=nil end
+        if state.flyVel then state.flyVel:Destroy(); state.flyVel=nil end
         hum.PlatformStand = false
         notify("Fly OFF", 2)
     end
 end
 
--- ============ BUILD NICE UI =============
-local CoreGui = game:GetService("CoreGui")
--- remove previous GUI if exists
+-- ============ BUILD MODERN ANIMATED UI ============
 pcall(function() CoreGui:FindFirstChild("ZiaanHub_CustomUI"):Destroy() end)
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -229,353 +216,396 @@ ScreenGui.Name = "ZiaanHub_CustomUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = CoreGui
 
--- root frame (centered)
+-- container
 local rootFrame = Instance.new("Frame", ScreenGui)
-rootFrame.Size = UDim2.new(0, 640, 0, 380)
-rootFrame.Position = UDim2.new(0.5, -320, 0.5, -190)
-rootFrame.BackgroundColor3 = Color3.fromRGB(24,24,24)
+rootFrame.Size = UDim2.new(0, 780, 0, 460)
+rootFrame.Position = UDim2.new(0.5, -390, 0.5, -230)
+rootFrame.BackgroundColor3 = Color3.fromRGB(22,22,24)
+rootFrame.BackgroundTransparency = 0.06
 rootFrame.BorderSizePixel = 0
 rootFrame.Active = true
 rootFrame.Draggable = true
 rootFrame.Name = "Root"
-Instance.new("UICorner", rootFrame).CornerRadius = UDim.new(0,12)
+Instance.new("UICorner", rootFrame).CornerRadius = UDim.new(0,16)
 local rootStroke = Instance.new("UIStroke", rootFrame)
 rootStroke.Thickness = 2
-rootStroke.Color = Color3.fromRGB(0,155,255)
+rootStroke.Color = Color3.fromRGB(10,150,255)
 
--- topbar
-local topBar = Instance.new("Frame", rootFrame)
-topBar.Size = UDim2.new(1,0,0,56)
-topBar.Position = UDim2.new(0,0,0,0)
-topBar.BackgroundTransparency = 1
+-- faint vignette / glass
+local glass = Instance.new("ImageLabel", rootFrame)
+glass.Size = UDim2.new(1, 0, 1, 0)
+glass.Position = UDim2.new(0,0,0,0)
+glass.BackgroundTransparency = 1
+glass.Image = "rbxassetid://3570695787"
+glass.ImageColor3 = Color3.fromRGB(30,30,34)
+glass.ImageTransparency = 0.88
+glass.ScaleType = Enum.ScaleType.Slice
+glass.SliceCenter = Rect.new(100,100,100,100)
+glass.ZIndex = 0
 
-local titleLabel = Instance.new("TextLabel", topBar)
-titleLabel.Size = UDim2.new(0.6, -20, 1, -12)
-titleLabel.Position = UDim2.new(0, 12, 0, 6)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "ZiaanHub"
-titleLabel.TextColor3 = Color3.fromRGB(255,255,255)
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 20
-titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+-- header
+local header = Instance.new("Frame", rootFrame)
+header.Size = UDim2.new(1, 0, 0, 72)
+header.Position = UDim2.new(0,0,0,0)
+header.BackgroundTransparency = 1
 
-local subtitle = Instance.new("TextLabel", topBar)
-subtitle.Size = UDim2.new(0.4, -16, 1, -12)
-subtitle.Position = UDim2.new(0.6, 8, 0, 6)
+local title = Instance.new("TextLabel", header)
+title.Size = UDim2.new(0.65, 0, 1, -18)
+title.Position = UDim2.new(0, 18, 0, 12)
+title.BackgroundTransparency = 1
+title.Text = "ZiaanHub"
+title.TextColor3 = Color3.fromRGB(245,245,245)
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 24
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local subtitle = Instance.new("TextLabel", header)
+subtitle.Size = UDim2.new(0.35, -20, 1, -18)
+subtitle.Position = UDim2.new(0.65, 8, 0, 12)
 subtitle.BackgroundTransparency = 1
 subtitle.Text = "by Ziaan"
-subtitle.TextColor3 = Color3.fromRGB(190,190,190)
+subtitle.TextColor3 = Color3.fromRGB(170,170,170)
 subtitle.Font = Enum.Font.Gotham
 subtitle.TextSize = 14
 subtitle.TextXAlignment = Enum.TextXAlignment.Right
 
 -- left tabs
-local tabsFrame = Instance.new("Frame", rootFrame)
-tabsFrame.Size = UDim2.new(0, 160, 1, -76)
-tabsFrame.Position = UDim2.new(0, 10, 0, 66)
-tabsFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Instance.new("UICorner", tabsFrame).CornerRadius = UDim.new(0,8)
-local tabsStroke = Instance.new("UIStroke", tabsFrame)
-tabsStroke.Thickness = 1
-tabsStroke.Color = Color3.fromRGB(60,60,60)
+local tabsContainer = Instance.new("Frame", rootFrame)
+tabsContainer.Size = UDim2.new(0, 200, 1, -100)
+tabsContainer.Position = UDim2.new(0, 18, 0, 88)
+tabsContainer.BackgroundTransparency = 1
 
-local tabsLayout = Instance.new("UIListLayout", tabsFrame)
-tabsLayout.Padding = UDim.new(0,10)
-tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-tabsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+local tabsBg = Instance.new("Frame", tabsContainer)
+tabsBg.Size = UDim2.new(1, 0, 1, 0)
+tabsBg.Position = UDim2.new(0,0,0,0)
+tabsBg.BackgroundColor3 = Color3.fromRGB(18,18,20)
+tabsBg.BorderSizePixel = 0
+Instance.new("UICorner", tabsBg).CornerRadius = UDim.new(0,12)
+local tabsStroke = Instance.new("UIStroke", tabsBg) tabsStroke.Thickness = 1 tabsStroke.Color = Color3.fromRGB(45,45,45)
 
--- pages container
-local pagesFrame = Instance.new("Frame", rootFrame)
-pagesFrame.Size = UDim2.new(1, -190, 1, -76)
-pagesFrame.Position = UDim2.new(0, 180, 0, 66)
-pagesFrame.BackgroundTransparency = 1
-Instance.new("UICorner", pagesFrame).CornerRadius = UDim.new(0,8)
-
-local function makeTabButton(text)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -24, 0, 40)
-    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    btn.TextColor3 = Color3.fromRGB(230,230,230)
+local function createTabButton(text, y)
+    local btn = Instance.new("TextButton", tabsBg)
+    btn.Size = UDim2.new(1, -28, 0, 52)
+    btn.Position = UDim2.new(0, 14, 0, 14 + y)
+    btn.BackgroundColor3 = Color3.fromRGB(38,38,40)
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 14
+    btn.TextSize = 15
+    btn.TextColor3 = Color3.fromRGB(235,235,235)
     btn.Text = text
     btn.AutoButtonColor = true
-    btn.Parent = tabsFrame
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
-    local stroke = Instance.new("UIStroke", btn) stroke.Thickness = 1 stroke.Color = Color3.fromRGB(70,70,70)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
+    local stroke = Instance.new("UIStroke", btn) stroke.Thickness = 1 stroke.Color = Color3.fromRGB(55,55,55)
+    -- hover animation
+    btn.MouseEnter:Connect(function()
+        pcall(function() TweenService:Create(btn, TweenInfo.new(0.13), {BackgroundColor3 = Color3.fromRGB(48,48,50)}):Play() end)
+    end)
+    btn.MouseLeave:Connect(function()
+        pcall(function() TweenService:Create(btn, TweenInfo.new(0.13), {BackgroundColor3 = Color3.fromRGB(38,38,40)}):Play() end)
+    end)
     return btn
 end
+
+local pagesContainer = Instance.new("Frame", rootFrame)
+pagesContainer.Size = UDim2.new(1, -246, 1, -100)
+pagesContainer.Position = UDim2.new(0, 230, 0, 88)
+pagesContainer.BackgroundTransparency = 1
 
 local pages = {}
 local currentPage = nil
 local function createPage(name)
-    local p = Instance.new("Frame", pagesFrame)
+    local p = Instance.new("Frame", pagesContainer)
     p.Size = UDim2.new(1, -12, 1, -12)
     p.Position = UDim2.new(0,6,0,6)
-    p.BackgroundColor3 = Color3.fromRGB(12,12,12)
+    p.BackgroundColor3 = Color3.fromRGB(14,14,16)
     p.Visible = false
-    Instance.new("UICorner", p).CornerRadius = UDim.new(0,8)
+    p.BorderSizePixel = 0
+    Instance.new("UICorner", p).CornerRadius = UDim.new(0,10)
     pages[name] = p
     return p
 end
-
 local function showPage(name)
-    if currentPage and currentPage ~= pages[name] then currentPage.Visible = false end
+    if currentPage and currentPage ~= pages[name] then
+        -- animate hide
+        pcall(function()
+            TweenService:Create(currentPage, TweenInfo.new(0.18), {BackgroundTransparency = 1}):Play()
+            task.wait(0.16)
+            currentPage.Visible = false
+        end)
+    end
     currentPage = pages[name]
-    if currentPage then currentPage.Visible = true end
+    if currentPage then
+        currentPage.Visible = true
+        currentPage.BackgroundTransparency = 1
+        TweenService:Create(currentPage, TweenInfo.new(0.18), {BackgroundTransparency = 0}):Play()
+    end
 end
 
--- create tabs & pages
-local homeBtn = makeTabButton("Home")
-local featBtn = makeTabButton("Features")
-local aboutBtn = makeTabButton("About")
+-- create tab buttons & pages
+local homeBtn = createTabButton("Home", 0)
+local featBtn = createTabButton("Features", 72)
+local aboutBtn = createTabButton("About", 144)
 
 local homePage = createPage("Home")
 local featPage = createPage("Features")
 local aboutPage = createPage("About")
 
--- HOME PAGE content
+-- HOME content
 do
-    local title = Instance.new("TextLabel", homePage)
-    title.Text = "Welcome to ZiaanHub"
-    title.Size = UDim2.new(1, -20, 0, 28)
-    title.Position = UDim2.new(0,10,0,10)
-    title.BackgroundTransparency = 1
-    title.TextColor3 = Color3.fromRGB(255,255,255)
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 18
+    local hTitle = Instance.new("TextLabel", homePage)
+    hTitle.Text = "Welcome to ZiaanHub"
+    hTitle.Size = UDim2.new(1, -24, 0, 32)
+    hTitle.Position = UDim2.new(0, 12, 0, 12)
+    hTitle.BackgroundTransparency = 1
+    hTitle.TextColor3 = Color3.fromRGB(245,245,245)
+    hTitle.Font = Enum.Font.GothamBold
+    hTitle.TextSize = 20
+    hTitle.TextXAlignment = Enum.TextXAlignment.Left
 
     local desc = Instance.new("TextLabel", homePage)
-    desc.Text = "Custom hub by Ziaan.\nFitur utama: WalkSpeed, Infinite Jump, Fly.\nGunakan tab Features untuk mengakses fitur."
-    desc.Size = UDim2.new(1, -20, 0, 80)
-    desc.Position = UDim2.new(0,10,0,44)
+    desc.Text = "Modern animated hub by Ziaan.\nFitur utama: WalkSpeed, Infinite Jump, Fly.\nGunakan tab Features untuk mengatur fitur. Tekan K untuk toggle UI."
+    desc.Size = UDim2.new(1, -24, 0, 90)
+    desc.Position = UDim2.new(0, 12, 0, 52)
     desc.BackgroundTransparency = 1
     desc.TextColor3 = Color3.fromRGB(200,200,200)
     desc.Font = Enum.Font.Gotham
     desc.TextSize = 14
     desc.TextWrapped = true
+    desc.TextXAlignment = Enum.TextXAlignment.Left
 
     local discordBtn = Instance.new("TextButton", homePage)
-    discordBtn.Size = UDim2.new(0, 160, 0, 36)
-    discordBtn.Position = UDim2.new(0,10,1,-50)
-    discordBtn.Text = "Open Discord"
+    discordBtn.Text = "Copy Discord Invite"
+    discordBtn.Size = UDim2.new(0,200,0,40)
+    discordBtn.Position = UDim2.new(0, 12, 1, -56)
     discordBtn.Font = Enum.Font.GothamBold
-    discordBtn.TextSize = 14
-    discordBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    discordBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    discordBtn.TextSize = 15
+    discordBtn.BackgroundColor3 = Color3.fromRGB(40,40,44)
+    discordBtn.TextColor3 = Color3.fromRGB(245,245,245)
     Instance.new("UICorner", discordBtn).CornerRadius = UDim.new(0,8)
-    discordBtn.MouseButton1Click:Connect(function() tryCopyToClipboard(DISCORD_INVITE) end)
+    discordBtn.MouseButton1Click:Connect(function()
+        tryCopyToClipboard(DISCORD_INVITE)
+        notify("Discord invite copied.", 3)
+    end)
 end
 
--- FEATURES PAGE content
+-- FEATURES content (sliders & toggles)
 do
-    local y = 10
-    local function addLabel(text, yOff)
-        local l = Instance.new("TextLabel", featPage)
-        l.Size = UDim2.new(1, -20, 0, 22)
-        l.Position = UDim2.new(0, 10, 0, yOff)
+    -- helper for label
+    local function makeLabel(parent, txt, posY)
+        local l = Instance.new("TextLabel", parent)
+        l.Size = UDim2.new(0.45, -12, 0, 20)
+        l.Position = UDim2.new(0, 12, 0, posY)
         l.BackgroundTransparency = 1
-        l.Text = text
+        l.Text = txt
         l.TextColor3 = Color3.fromRGB(230,230,230)
         l.Font = Enum.Font.GothamBold
         l.TextSize = 14
+        l.TextXAlignment = Enum.TextXAlignment.Left
         return l
     end
 
-    -- WalkSpeed controls
-    addLabel("WalkSpeed", 10)
-    local wsVal = Instance.new("TextLabel", featPage)
-    wsVal.Size = UDim2.new(0, 120, 0, 28)
-    wsVal.Position = UDim2.new(0, 10, 0, 36)
-    wsVal.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    wsVal.Text = "Speed: "..tostring(DEFAULT_WALKSPEED)
-    wsVal.TextColor3 = Color3.fromRGB(240,240,240)
-    wsVal.Font = Enum.Font.Gotham
-    wsVal.TextSize = 14
-    Instance.new("UICorner", wsVal).CornerRadius = UDim.new(0,6)
+    -- WalkSpeed slider
+    makeLabel(featPage, "WalkSpeed", 12)
+    local wsBar = Instance.new("Frame", featPage)
+    wsBar.Size = UDim2.new(0.6, 0, 0, 12)
+    wsBar.Position = UDim2.new(0, 12, 0, 40)
+    wsBar.BackgroundColor3 = Color3.fromRGB(36,36,36)
+    Instance.new("UICorner", wsBar).CornerRadius = UDim.new(0,6)
+    local wsFill = Instance.new("Frame", wsBar)
+    wsFill.Size = UDim2.new(((state.ws - 1) / (350 - 1)),0,1,0)
+    wsFill.BackgroundColor3 = Color3.fromRGB(0,160,255)
+    Instance.new("UICorner", wsFill).CornerRadius = UDim.new(0,6)
+    local wsValue = Instance.new("TextLabel", featPage)
+    wsValue.Size = UDim2.new(0, 90, 0, 26)
+    wsValue.Position = UDim2.new(0.62, 12, 0, 32)
+    wsValue.BackgroundColor3 = Color3.fromRGB(36,36,36)
+    wsValue.Text = tostring(state.ws)
+    wsValue.TextColor3 = Color3.fromRGB(230,230,230)
+    wsValue.Font = Enum.Font.Gotham
+    wsValue.TextSize = 14
+    Instance.new("UICorner", wsValue).CornerRadius = UDim.new(0,6)
 
-    local wsMinus = Instance.new("TextButton", featPage)
-    wsMinus.Size = UDim2.new(0, 48, 0, 28)
-    wsMinus.Position = UDim2.new(0, 140, 0, 36)
-    wsMinus.Text = "-5"
-    wsMinus.Font = Enum.Font.GothamBold
-    wsMinus.TextSize = 14
-    wsMinus.BackgroundColor3 = Color3.fromRGB(60,60,60)
-    Instance.new("UICorner", wsMinus).CornerRadius = UDim.new(0,6)
-
-    local wsPlus = wsMinus:Clone()
-    wsPlus.Parent = featPage
-    wsPlus.Position = UDim2.new(0, 198, 0, 36)
-    wsPlus.Text = "+5"
-
-    local wsBox = Instance.new("TextBox", featPage)
-    wsBox.Size = UDim2.new(0, 80, 0, 28)
-    wsBox.Position = UDim2.new(0, 258, 0, 36)
-    wsBox.PlaceholderText = "Set..."
-    wsBox.ClearTextOnFocus = false
-    wsBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    wsBox.TextColor3 = Color3.fromRGB(240,240,240)
-    Instance.new("UICorner", wsBox).CornerRadius = UDim.new(0,6)
-
-    local function refreshWSLabel() wsVal.Text = "Speed: "..tostring(state.ws) end
-
-    wsMinus.MouseButton1Click:Connect(function()
-        local new = math.max(1, (state.ws or DEFAULT_WALKSPEED) - 5)
-        setWalkSpeed(new); refreshWSLabel()
+    local draggingWS = false
+    wsBar.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingWS = true
+            pcall(function() TweenService:Create(wsBar, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(46,46,46)}):Play() end)
+        end
     end)
-    wsPlus.MouseButton1Click:Connect(function()
-        local new = math.min(350, (state.ws or DEFAULT_WALKSPEED) + 5)
-        setWalkSpeed(new); refreshWSLabel()
+    UIS.InputChanged:Connect(function(i)
+        if draggingWS and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local rel = math.clamp((i.Position.X - wsBar.AbsolutePosition.X) / wsBar.AbsoluteSize.X, 0, 1)
+            wsFill.Size = UDim2.new(rel,0,1,0)
+            local val = math.floor(1 + (350-1) * rel)
+            wsValue.Text = tostring(val)
+            setWalkSpeed(val)
+        end
     end)
-    wsBox.FocusLost:Connect(function(enter)
-        if enter then
-            local n = tonumber(wsBox.Text)
-            if n then setWalkSpeed(math.clamp(n,1,350)); refreshWSLabel() end
+    UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingWS = false
+            pcall(function() TweenService:Create(wsBar, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(36,36,36)}):Play() end)
         end
     end)
 
-    -- JumpPower controls
-    addLabel("JumpPower", 80)
-    local jpVal = Instance.new("TextLabel", featPage)
-    jpVal.Size = UDim2.new(0, 120, 0, 28)
-    jpVal.Position = UDim2.new(0, 10, 0, 106)
-    jpVal.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    jpVal.Text = "Jump: "..tostring(DEFAULT_JUMPPOWER)
-    jpVal.TextColor3 = Color3.fromRGB(240,240,240)
-    jpVal.Font = Enum.Font.Gotham
-    jpVal.TextSize = 14
-    Instance.new("UICorner", jpVal).CornerRadius = UDim.new(0,6)
+    -- JumpPower slider
+    makeLabel(featPage, "JumpPower", 92)
+    local jpBar = Instance.new("Frame", featPage)
+    jpBar.Size = UDim2.new(0.6, 0, 0, 12)
+    jpBar.Position = UDim2.new(0, 12, 0, 120)
+    jpBar.BackgroundColor3 = Color3.fromRGB(36,36,36)
+    Instance.new("UICorner", jpBar).CornerRadius = UDim.new(0,6)
+    local jpFill = Instance.new("Frame", jpBar)
+    jpFill.Size = UDim2.new(((state.jp - 1) / (500 - 1)),0,1,0)
+    jpFill.BackgroundColor3 = Color3.fromRGB(0,160,255)
+    Instance.new("UICorner", jpFill).CornerRadius = UDim.new(0,6)
+    local jpValue = Instance.new("TextLabel", featPage)
+    jpValue.Size = UDim2.new(0, 90, 0, 26)
+    jpValue.Position = UDim2.new(0.62, 12, 0, 112)
+    jpValue.BackgroundColor3 = Color3.fromRGB(36,36,36)
+    jpValue.Text = tostring(state.jp)
+    jpValue.TextColor3 = Color3.fromRGB(230,230,230)
+    jpValue.Font = Enum.Font.Gotham
+    jpValue.TextSize = 14
+    Instance.new("UICorner", jpValue).CornerRadius = UDim.new(0,6)
 
-    local jpBox = Instance.new("TextBox", featPage)
-    jpBox.Size = UDim2.new(0, 80, 0, 28)
-    jpBox.Position = UDim2.new(0, 140, 0, 106)
-    jpBox.PlaceholderText = "Set..."
-    jpBox.ClearTextOnFocus = false
-    jpBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    jpBox.TextColor3 = Color3.fromRGB(240,240,240)
-    Instance.new("UICorner", jpBox).CornerRadius = UDim.new(0,6)
-
-    jpBox.FocusLost:Connect(function(enter)
-        if enter then
-            local n = tonumber(jpBox.Text)
-            if n then setJumpPower(math.clamp(n,1,350)); jpVal.Text = "Jump: "..tostring(state.jp) end
+    local draggingJP = false
+    jpBar.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingJP = true
+            pcall(function() TweenService:Create(jpBar, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(46,46,46)}):Play() end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(i)
+        if draggingJP and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local rel = math.clamp((i.Position.X - jpBar.AbsolutePosition.X) / jpBar.AbsoluteSize.X, 0, 1)
+            jpFill.Size = UDim2.new(rel,0,1,0)
+            local val = math.floor(1 + (500-1) * rel)
+            jpValue.Text = tostring(val)
+            setJumpPower(val)
+        end
+    end)
+    UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingJP = false
+            pcall(function() TweenService:Create(jpBar, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(36,36,36)}):Play() end)
         end
     end)
 
     -- Infinite Jump toggle
     local ijBtn = Instance.new("TextButton", featPage)
-    ijBtn.Size = UDim2.new(0, 180, 0, 36)
-    ijBtn.Position = UDim2.new(0, 10, 0, 152)
-    ijBtn.Text = "Infinite Jump: OFF"
+    ijBtn.Size = UDim2.new(0, 240, 0, 40)
+    ijBtn.Position = UDim2.new(0, 12, 0, 170)
+    ijBtn.Text = "Infinite Jump • OFF"
     ijBtn.Font = Enum.Font.GothamBold
     ijBtn.TextSize = 14
-    ijBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+    ijBtn.BackgroundColor3 = Color3.fromRGB(42,42,44)
+    ijBtn.TextColor3 = Color3.fromRGB(235,235,235)
     Instance.new("UICorner", ijBtn).CornerRadius = UDim.new(0,8)
     ijBtn.MouseButton1Click:Connect(function()
         setInfiniteJump(not state.infJump)
-        ijBtn.Text = "Infinite Jump: "..(state.infJump and "ON" or "OFF")
-        ijBtn.BackgroundColor3 = state.infJump and Color3.fromRGB(0,170,85) or Color3.fromRGB(45,45,45)
+        ijBtn.Text = "Infinite Jump • "..(state.infJump and "ON" or "OFF")
+        ijBtn.BackgroundColor3 = state.infJump and Color3.fromRGB(0,170,85) or Color3.fromRGB(42,42,44)
     end)
 
-    -- Fly toggle + speed
+    -- Fly toggle + speed input
     local flyBtn = Instance.new("TextButton", featPage)
-    flyBtn.Size = UDim2.new(0, 180, 0, 36)
-    flyBtn.Position = UDim2.new(0, 10, 0, 198)
-    flyBtn.Text = "Fly: OFF"
+    flyBtn.Size = UDim2.new(0, 240, 0, 40)
+    flyBtn.Position = UDim2.new(0, 12, 0, 224)
+    flyBtn.Text = "Fly • OFF"
     flyBtn.Font = Enum.Font.GothamBold
     flyBtn.TextSize = 14
-    flyBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+    flyBtn.BackgroundColor3 = Color3.fromRGB(42,42,44)
+    flyBtn.TextColor3 = Color3.fromRGB(235,235,235)
     Instance.new("UICorner", flyBtn).CornerRadius = UDim.new(0,8)
 
     local flyBox = Instance.new("TextBox", featPage)
-    flyBox.Size = UDim2.new(0, 80, 0, 28)
-    flyBox.Position = UDim2.new(0, 200, 0, 198)
+    flyBox.Size = UDim2.new(0, 120, 0, 34)
+    flyBox.Position = UDim2.new(0, 262, 0, 224)
     flyBox.PlaceholderText = tostring(DEFAULT_FLY_SPEED)
+    flyBox.BackgroundColor3 = Color3.fromRGB(36,36,36)
+    flyBox.TextColor3 = Color3.fromRGB(230,230,230)
     flyBox.ClearTextOnFocus = false
-    flyBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    flyBox.TextColor3 = Color3.fromRGB(240,240,240)
-    Instance.new("UICorner", flyBox).CornerRadius = UDim.new(0,6)
+    Instance.new("UICorner", flyBox).CornerRadius = UDim.new(0,8)
 
     flyBtn.MouseButton1Click:Connect(function()
         local n = tonumber(flyBox.Text) or state.flySpeed or DEFAULT_FLY_SPEED
         state.flySpeed = math.clamp(n, 10, 500)
         setFly(not state.fly)
-        flyBtn.Text = "Fly: "..(state.fly and "ON" or "OFF")
-        flyBtn.BackgroundColor3 = state.fly and Color3.fromRGB(0,170,85) or Color3.fromRGB(45,45,45)
+        flyBtn.Text = "Fly • "..(state.fly and "ON" or "OFF")
+        flyBtn.BackgroundColor3 = state.fly and Color3.fromRGB(0,170,85) or Color3.fromRGB(42,42,44)
     end)
 
     -- Reset Button
     local resetBtn = Instance.new("TextButton", featPage)
-    resetBtn.Size = UDim2.new(0, 180, 0, 36)
-    resetBtn.Position = UDim2.new(0, 10, 0, 246)
+    resetBtn.Size = UDim2.new(0, 160, 0, 36)
+    resetBtn.Position = UDim2.new(0, 12, 0, 284)
     resetBtn.Text = "Reset to Default"
     resetBtn.Font = Enum.Font.GothamBold
     resetBtn.TextSize = 14
-    resetBtn.BackgroundColor3 = Color3.fromRGB(120,50,50)
+    resetBtn.BackgroundColor3 = Color3.fromRGB(155,55,55)
+    resetBtn.TextColor3 = Color3.fromRGB(255,255,255)
     Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,8)
     resetBtn.MouseButton1Click:Connect(function()
         applyDefaults()
-        refreshWSLabel()
-        jpVal.Text = "Jump: "..tostring(state.jp)
-        ijBtn.Text = "Infinite Jump: OFF"
-        ijBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-        flyBtn.Text = "Fly: OFF"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+        wsValue.Text = tostring(state.ws)
+        jpValue.Text = tostring(state.jp)
+        ijBtn.Text = "Infinite Jump • OFF"
+        ijBtn.BackgroundColor3 = Color3.fromRGB(42,42,44)
+        flyBtn.Text = "Fly • OFF"
+        flyBtn.BackgroundColor3 = Color3.fromRGB(42,42,44)
+        wsFill.Size = UDim2.new(((state.ws - 1) / (350 - 1)),0,1,0)
+        jpFill.Size = UDim2.new(((state.jp - 1) / (500 - 1)),0,1,0)
     end)
 end
 
--- ABOUT page content
+-- ABOUT content
 do
-    local aboutTitle = Instance.new("TextLabel", aboutPage)
-    aboutTitle.Text = "About ZiaanHub"
-    aboutTitle.Size = UDim2.new(1, -20, 0, 28)
-    aboutTitle.Position = UDim2.new(0,10,0,10)
-    aboutTitle.TextColor3 = Color3.fromRGB(255,255,255)
-    aboutTitle.Font = Enum.Font.GothamBold
-    aboutTitle.TextSize = 18
-    aboutTitle.BackgroundTransparency = 1
+    local aTitle = Instance.new("TextLabel", aboutPage)
+    aTitle.Text = "About ZiaanHub"
+    aTitle.Size = UDim2.new(1,-24,0,28)
+    aTitle.Position = UDim2.new(0,12,0,12)
+    aTitle.BackgroundTransparency = 1
+    aTitle.TextColor3 = Color3.fromRGB(245,245,245)
+    aTitle.Font = Enum.Font.GothamBold
+    aTitle.TextSize = 18
 
     local aboutTxt = Instance.new("TextLabel", aboutPage)
-    aboutTxt.Text = "ZiaanHub dibuat oleh Ziaan.\nFitur: WalkSpeed, Infinite Jump, Fly.\nGunakan dengan bijak. Tidak untuk disalahgunakan."
-    aboutTxt.Size = UDim2.new(1, -20, 1, -60)
-    aboutTxt.Position = UDim2.new(0,10,0,44)
+    aboutTxt.Text = "ZiaanHub dibuat oleh Ziaan.\nFitur: WalkSpeed, Infinite Jump, Fly.\nVersi modern dengan animasi & slider. Gunakan dengan bijak."
+    aboutTxt.Size = UDim2.new(1,-24,1,-64)
+    aboutTxt.Position = UDim2.new(0,12,0,46)
+    aboutTxt.BackgroundTransparency = 1
     aboutTxt.TextColor3 = Color3.fromRGB(200,200,200)
     aboutTxt.Font = Enum.Font.Gotham
     aboutTxt.TextSize = 14
     aboutTxt.TextWrapped = true
-    aboutTxt.BackgroundTransparency = 1
 end
 
--- show default page
+-- default page show (animate in)
 showPage("Home")
-
--- connect tab clicks
 homeBtn.MouseButton1Click:Connect(function() showPage("Home") end)
 featBtn.MouseButton1Click:Connect(function() showPage("Features") end)
 aboutBtn.MouseButton1Click:Connect(function() showPage("About") end)
 
--- ============ KEY SCREEN (overlay) ============
+-- ============ KEY OVERLAY (animated) ============
 local keyOverlay = Instance.new("Frame", ScreenGui)
-keyOverlay.Size = UDim2.new(0, 480, 0, 260)
-keyOverlay.Position = UDim2.new(0.5, -240, 0.5, -130)
-keyOverlay.BackgroundColor3 = Color3.fromRGB(25,25,25)
-keyOverlay.Name = "KeyOverlay"
-Instance.new("UICorner", keyOverlay).CornerRadius = UDim.new(0,12)
-local keyStroke = Instance.new("UIStroke", keyOverlay) keyStroke.Thickness = 2 keyStroke.Color = Color3.fromRGB(0,160,255)
+keyOverlay.Size = UDim2.new(0, 560, 0, 320)
+keyOverlay.Position = UDim2.new(0.5, -280, 0.5, -170)
+keyOverlay.BackgroundColor3 = Color3.fromRGB(22,22,24)
+Instance.new("UICorner", keyOverlay).CornerRadius = UDim.new(0,14)
+local keyStroke = Instance.new("UIStroke", keyOverlay) keyStroke.Thickness = 2 keyStroke.Color = Color3.fromRGB(0,150,255)
 
 local keyTitle = Instance.new("TextLabel", keyOverlay)
-keyTitle.Size = UDim2.new(1, -20, 0, 36)
-keyTitle.Position = UDim2.new(0, 10, 0, 10)
+keyTitle.Size = UDim2.new(1, -36, 0, 36)
+keyTitle.Position = UDim2.new(0, 18, 0, 18)
 keyTitle.BackgroundTransparency = 1
 keyTitle.Text = "ZiaanHub | Masukkan Key"
-keyTitle.TextColor3 = Color3.fromRGB(255,255,255)
+keyTitle.TextColor3 = Color3.fromRGB(245,245,245)
 keyTitle.Font = Enum.Font.GothamBold
 keyTitle.TextSize = 18
 
 local keyNote = Instance.new("TextLabel", keyOverlay)
-keyNote.Size = UDim2.new(1, -20, 0, 24)
-keyNote.Position = UDim2.new(0,10,0,48)
+keyNote.Size = UDim2.new(1, -36, 0, 36)
+keyNote.Position = UDim2.new(0,18,0,58)
 keyNote.BackgroundTransparency = 1
 keyNote.Text = "Ambil key di Discord. Tekan tombol Discord untuk menyalin invite."
 keyNote.TextColor3 = Color3.fromRGB(200,200,200)
@@ -584,35 +614,35 @@ keyNote.TextSize = 14
 keyNote.TextWrapped = true
 
 local keyBox = Instance.new("TextBox", keyOverlay)
-keyBox.Size = UDim2.new(1, -20, 0, 36)
-keyBox.Position = UDim2.new(0,10,0,84)
+keyBox.Size = UDim2.new(1, -36, 0, 44)
+keyBox.Position = UDim2.new(0, 18, 0, 108)
 keyBox.PlaceholderText = "Paste key di sini..."
 keyBox.ClearTextOnFocus = false
-keyBox.TextColor3 = Color3.fromRGB(255,255,255)
-keyBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+keyBox.TextColor3 = Color3.fromRGB(235,235,235)
+keyBox.BackgroundColor3 = Color3.fromRGB(36,36,38)
 Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0,8)
 
 local keyVerify = Instance.new("TextButton", keyOverlay)
-keyVerify.Size = UDim2.new(0.48, -15, 0, 36)
-keyVerify.Position = UDim2.new(0, 10, 0, 132)
+keyVerify.Size = UDim2.new(0.5, -22, 0, 44)
+keyVerify.Position = UDim2.new(0, 18, 0, 164)
 keyVerify.Text = "Verifikasi Key"
 keyVerify.Font = Enum.Font.GothamBold
-keyVerify.TextSize = 14
+keyVerify.TextSize = 15
 keyVerify.BackgroundColor3 = Color3.fromRGB(0,170,85)
 Instance.new("UICorner", keyVerify).CornerRadius = UDim.new(0,8)
 
 local keyDiscord = Instance.new("TextButton", keyOverlay)
-keyDiscord.Size = UDim2.new(0.48, -15, 0, 36)
-keyDiscord.Position = UDim2.new(0.52, 5, 0, 132)
-keyDiscord.Text = "Discord"
+keyDiscord.Size = UDim2.new(0.5, -22, 0, 44)
+keyDiscord.Position = UDim2.new(0.5, 4, 0, 164)
+keyDiscord.Text = "Salin Discord"
 keyDiscord.Font = Enum.Font.GothamBold
-keyDiscord.TextSize = 14
-keyDiscord.BackgroundColor3 = Color3.fromRGB(60,60,60)
+keyDiscord.TextSize = 15
+keyDiscord.BackgroundColor3 = Color3.fromRGB(44,44,46)
 Instance.new("UICorner", keyDiscord).CornerRadius = UDim.new(0,8)
 
 local keyStatus = Instance.new("TextLabel", keyOverlay)
-keyStatus.Size = UDim2.new(1, -20, 0, 20)
-keyStatus.Position = UDim2.new(0, 10, 0, 180)
+keyStatus.Size = UDim2.new(1, -36, 0, 24)
+keyStatus.Position = UDim2.new(0, 18, 0, 220)
 keyStatus.BackgroundTransparency = 1
 keyStatus.Text = ""
 keyStatus.TextColor3 = Color3.fromRGB(255,120,120)
@@ -620,7 +650,10 @@ keyStatus.Font = Enum.Font.Gotham
 keyStatus.TextSize = 14
 keyStatus.TextXAlignment = Enum.TextXAlignment.Left
 
--- key logic
+-- animated appear
+keyOverlay.Visible = true
+rootFrame.Visible = false
+
 local function verifyKeyFlow()
     keyStatus.TextColor3 = Color3.fromRGB(190,190,190)
     keyStatus.Text = "Mengambil key dari server..."
@@ -643,7 +676,10 @@ local function verifyKeyFlow()
             keyStatus.Text = "Key valid. Membuka UI..."
             notify("Key valid. Selamat datang!", 3)
             state.hasAccess = true
-            task.wait(0.6)
+            task.wait(0.5)
+            -- animate overlay out, main in
+            pcall(function() TweenService:Create(keyOverlay, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = keyOverlay.Position + UDim2.new(0,0,0,40), BackgroundTransparency = 1}):Play() end)
+            task.wait(0.22)
             keyOverlay.Visible = false
             rootFrame.Visible = true
             applyDefaults()
@@ -659,37 +695,42 @@ keyVerify.MouseButton1Click:Connect(verifyKeyFlow)
 keyBox.FocusLost:Connect(function(enter) if enter then verifyKeyFlow() end end)
 keyDiscord.MouseButton1Click:Connect(function() tryCopyToClipboard(DISCORD_INVITE) end)
 
--- initial state: hide main UI until key verified
+-- initial state
 rootFrame.Visible = false
 keyOverlay.Visible = true
 notify("Masukkan key. Tekan K untuk toggle UI.", 5)
 
--- UI toggle with K (only when has access or when on key screen allow toggle)
+-- UI toggle with K
 UIS.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == UI_TOGGLE_KEY then
         if state.hasAccess then
             state.uiVisible = not state.uiVisible
-            rootFrame.Visible = state.uiVisible
+            pcall(function()
+                if state.uiVisible then
+                    rootFrame.Visible = true
+                    rootFrame.Position = UDim2.new(0.5, -390, 0.5, -230) + UDim2.new(0,0,0,-10)
+                    TweenService:Create(rootFrame, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {Position = UDim2.new(0.5, -390, 0.5, -230)}):Play()
+                else
+                    TweenService:Create(rootFrame, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {Position = UDim2.new(0.5, -390, 0.5, -210)}):Play()
+                    task.delay(0.18, function() rootFrame.Visible = false end)
+                end
+            end)
         else
             keyOverlay.Visible = not keyOverlay.Visible
         end
     end
 end)
 
--- cleanup on disable (optional function for developer)
+-- cleanup
 local function cleanup()
-    -- disconnect connections
-    if state.flyConn then state.flyConn:Disconnect(); state.flyConn=nil end
-    if state.infJumpConn then state.infJumpConn:Disconnect(); state.infJumpConn=nil end
-    if state.flyGyro then state.flyGyro:Destroy(); state.flyGyro=nil end
-    if state.flyVel then state.flyVel:Destroy(); state.flyVel=nil end
+    if state.flyConn then state.flyConn:Disconnect(); state.flyConn = nil end
+    if state.infJumpConn then state.infJumpConn:Disconnect(); state.infJumpConn = nil end
+    if state.flyGyro then state.flyGyro:Destroy(); state.flyGyro = nil end
+    if state.flyVel then state.flyVel:Destroy(); state.flyVel = nil end
     pcall(function() ScreenGui:Destroy() end)
 end
-
--- expose cleanup to global (dev use)
 _G.ZiaanHubCleanup = cleanup
 
--- final notify
--- if key already cached (rare), you could auto-verify here (not implemented)
--- done
+-- final
+-- UI hidden until key verified
