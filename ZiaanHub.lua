@@ -1,6 +1,6 @@
 -- ZiaanHub.lua
 local KeySystem = loadstring(game:HttpGet("https://raw.githubusercontent.com/USERNAME/ZiaanHub/main/KeySystem.lua"))()
-local ZiaanUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/USERNAME/ZiaanHub/main/ZiaanUI.lua"))()
+local ZiaanUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/ZiaanUI.lua"))()
 
 -- GUI Input Key
 local ScreenGui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
