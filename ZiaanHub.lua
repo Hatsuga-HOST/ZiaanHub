@@ -1,6 +1,5 @@
--- ZiaanHub Modern v2.2 (single-file)
--- Improved UI, mobile-friendly sliders, robust features, key system + config save
--- Edit KEY_SOURCE_URL & DISCORD_INVITE sesuai kebutuhan
+-- ZiaanHub Deep Ocean Edition
+-- Advanced UI dengan tema deep ocean glassmorphism dan notifikasi custom
 
 -- ================= CONFIG =================
 local KEY_SOURCE_URL    = "https://pastebin.com/raw/3vaUdQ30"
@@ -9,8 +8,9 @@ local DEFAULT_WALKSPEED = 16
 local DEFAULT_JUMPPOWER = 50
 local DEFAULT_FLY_SPEED = 60
 local UI_TOGGLE_KEY     = Enum.KeyCode.K
-local NOTIF_TITLE       = "ZiaanHub"
-local CONFIG_FILE       = "ZiaanHubConfig.json"
+local NOTIF_TITLE       = "ZiaanHub Ocean"
+local CONFIG_FILE       = "ZiaanHubOceanConfig.json"
+local NOTIFICATION_DURATION = 5
 
 -- ================ SERVICES / HELPERS ================
 local Players = game:GetService("Players")
@@ -20,28 +20,154 @@ local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
+local Lighting = game:GetService("Lighting")
 
 local has_writefile = type(writefile) == "function"
 local has_readfile  = type(readfile) == "function"
 local has_isfile    = type(isfile) == "function"
 local setclip = setclipboard or (syn and syn.write_clipboard) or (function() end)
 
-local function notify(text, dur)
-    pcall(function()
-        game.StarterGui:SetCore("SendNotification", {
-            Title = NOTIF_TITLE;
-            Text = text or "";
-            Duration = dur or 4;
-        })
+-- Palet warna tema deep ocean
+local COLOR_PALETTE = {
+    DARK_BLUE = Color3.fromRGB(1, 22, 39),
+    DEEP_BLUE = Color3.fromRGB(3, 38, 66),
+    MEDIUM_BLUE = Color3.fromRGB(2, 62, 102),
+    LIGHT_BLUE = Color3.fromRGB(0, 119, 182),
+    CYAN = Color3.fromRGB(0, 180, 216),
+    LIGHT_CYAN = Color3.fromRGB(144, 224, 239),
+    WHITE = Color3.fromRGB(230, 240, 250),
+    RED = Color3.fromRGB(231, 76, 60),
+    GREEN = Color3.fromRGB(46, 204, 113)
+}
+
+-- Sistem notifikasi custom
+local function createNotification(title, text, duration, notifType)
+    duration = duration or NOTIFICATION_DURATION
+    notifType = notifType or "info"
+    
+    local notifContainer = CoreGui:FindFirstChild("OceanNotifications")
+    if not notifContainer then
+        notifContainer = Instance.new("Frame", CoreGui)
+        notifContainer.Name = "OceanNotifications"
+        notifContainer.Size = UDim2.new(0.3, 0, 1, 0)
+        notifContainer.Position = UDim2.new(0.68, 0, 0.02, 0)
+        notifContainer.BackgroundTransparency = 1
+        notifContainer.ClipsDescendants = true
+        
+        local uiListLayout = Instance.new("UIListLayout", notifContainer)
+        uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+        uiListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+        uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        uiListLayout.Padding = UDim.new(0, 10)
+    end
+    
+    local notification = Instance.new("Frame")
+    notification.Name = "OceanNotif"
+    notification.Size = UDim2.new(1, 0, 0, 0)
+    notification.AutomaticSize = Enum.AutomaticSize.Y
+    notification.BackgroundColor3 = COLOR_PALETTE.DARK_BLUE
+    notification.BackgroundTransparency = 0.15
+    notification.BorderSizePixel = 0
+    notification.LayoutOrder = #notifContainer:GetChildren()
+    notification.Parent = notifContainer
+    
+    local uiCorner = Instance.new("UICorner", notification)
+    uiCorner.CornerRadius = UDim.new(0, 12)
+    
+    local uiStroke = Instance.new("UIStroke", notification)
+    uiStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+    uiStroke.Thickness = 1.5
+    uiStroke.Transparency = 0.3
+    
+    local titleLabel = Instance.new("TextLabel", notification)
+    titleLabel.Size = UDim2.new(1, -20, 0, 24)
+    titleLabel.Position = UDim2.new(0, 10, 0, 10)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 16
+    titleLabel.TextColor3 = COLOR_PALETTE.WHITE
+    titleLabel.Text = title
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local textLabel = Instance.new("TextLabel", notification)
+    textLabel.Size = UDim2.new(1, -20, 0, 0)
+    textLabel.Position = UDim2.new(0, 10, 0, 34)
+    textLabel.AutomaticSize = Enum.AutomaticSize.Y
+    textLabel.BackgroundTransparency = 1
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.TextSize = 14
+    textLabel.TextColor3 = COLOR_PALETTE.LIGHT_CYAN
+    textLabel.TextWrapped = true
+    textLabel.Text = text
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local progressBar = Instance.new("Frame", notification)
+    progressBar.Size = UDim2.new(1, 0, 0, 3)
+    progressBar.Position = UDim2.new(0, 0, 1, -3)
+    progressBar.BackgroundColor3 = notifType == "success" and COLOR_PALETTE.GREEN or 
+                                  notifType == "error" and COLOR_PALETTE.RED or 
+                                  COLOR_PALETTE.CYAN
+    progressBar.BorderSizePixel = 0
+    
+    local progressCorner = Instance.new("UICorner", progressBar)
+    progressCorner.CornerRadius = UDim.new(0, 2)
+    
+    -- Set warna berdasarkan tipe notifikasi
+    if notifType == "success" then
+        uiStroke.Color = COLOR_PALETTE.GREEN
+    elseif notifType == "error" then
+        uiStroke.Color = COLOR_PALETTE.RED
+    end
+    
+    -- Animasi masuk
+    notification.Size = UDim2.new(0, 0, 0, 0)
+    TweenService:Create(notification, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(1, 0, 0, 0)
+    }):Play()
+    
+    task.wait(0.3)
+    TweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(1, 0, 0, textLabel.TextBounds.Y + 44)
+    }):Play()
+    
+    -- Animasi progress bar
+    TweenService:Create(progressBar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+        Size = UDim2.new(0, 0, 0, 3)
+    }):Play()
+    
+    -- Hapus notifikasi setelah durasi
+    delay(duration, function()
+        TweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 1
+        }):Play()
+        TweenService:Create(uiStroke, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Transparency = 1
+        }):Play()
+        TweenService:Create(titleLabel, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            TextTransparency = 1
+        }):Play()
+        TweenService:Create(textLabel, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            TextTransparency = 1
+        }):Play()
+        
+        wait(0.5)
+        notification:Destroy()
     end)
+    
+    return notification
+end
+
+local function notify(text, dur, notifType)
+    createNotification(NOTIF_TITLE, text, dur, notifType)
 end
 
 local function tryCopyToClipboard(text)
     if setclip then
         pcall(function() setclip(text) end)
-        notify("Invite disalin ke clipboard.", 3)
+        notify("Invite disalin ke clipboard.", 3, "success")
     else
-        notify("Salin manual: "..text, 4)
+        notify("Salin manual: "..text, 4, "info")
     end
 end
 
@@ -100,7 +226,8 @@ local state = {
     -- connections to clean up
     infJumpConn = nil,
     flyConn = nil,
-    uiVisible = true
+    uiVisible = true,
+    notificationsEnabled = true
 }
 
 -- load config if possible
@@ -157,7 +284,7 @@ local function applyDefaults()
     if state.flyVel then pcall(function() state.flyVel:Destroy() end); state.flyVel = nil end
     state.fly = false
 
-    notify("Reset ke default", 3)
+    notify("Reset ke default", 3, "info")
     persist()
 end
 
@@ -191,17 +318,17 @@ local function setInfiniteJump(enabled)
                 end
             end)
         end
-        notify("Infinite Jump: ON", 2)
+        notify("Infinite Jump: ON", 2, "success")
     else
         if state.infJumpConn then state.infJumpConn:Disconnect(); state.infJumpConn = nil end
-        notify("Infinite Jump: OFF", 2)
+        notify("Infinite Jump: OFF", 2, "info")
     end
 end
 
 local function setFly(enabled)
     state.fly = enabled
     local hum, root = getHumanoidAndRoot()
-    if not hum or not root then notify("Gagal: karakter tidak siap.", 2); return end
+    if not hum or not root then notify("Gagal: karakter tidak siap.", 2, "error"); return end
 
     if enabled then
         -- create safe unique names so we can clean later
@@ -242,13 +369,13 @@ local function setFly(enabled)
             if state.flyGyro then pcall(function() state.flyGyro.CFrame = CFrame.new(root.Position, root.Position + cam.CFrame.LookVector) end) end
         end)
 
-        notify("Fly: ON (WASD + Space/Shift)", 3)
+        notify("Fly: ON (WASD + Space/Shift)", 3, "success")
     else
         if state.flyConn then state.flyConn:Disconnect(); state.flyConn = nil end
         if state.flyGyro then pcall(function() state.flyGyro:Destroy() end); state.flyGyro = nil end
         if state.flyVel then pcall(function() state.flyVel:Destroy() end); state.flyVel = nil end
         pcall(function() hum.PlatformStand = false end)
-        notify("Fly: OFF", 2)
+        notify("Fly: OFF", 2, "info")
     end
     persist()
 end
@@ -259,7 +386,14 @@ pcall(function() CoreGui:FindFirstChild("ZiaanHub_CustomUI"):Destroy() end)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ZiaanHub_CustomUI"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = CoreGui
+
+-- Background blur effect
+local blurEffect = Instance.new("BlurEffect")
+blurEffect.Size = 12
+blurEffect.Parent = Lighting
+blurEffect.Enabled = false
 
 -- Root container: scale-based so it looks OK on mobile/pc
 local rootFrame = Instance.new("Frame", ScreenGui)
@@ -267,19 +401,30 @@ rootFrame.Name = "RootFrame"
 rootFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 rootFrame.Size = UDim2.new(0.92, 0, 0.86, 0)
 rootFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-rootFrame.BackgroundColor3 = Color3.fromRGB(20,20,22)
-rootFrame.BackgroundTransparency = 0.02
+rootFrame.BackgroundColor3 = COLOR_PALETTE.DARK_BLUE
+rootFrame.BackgroundTransparency = 0.1
 rootFrame.BorderSizePixel = 0
-Instance.new("UICorner", rootFrame).CornerRadius = UDim.new(0,12)
+Instance.new("UICorner", rootFrame).CornerRadius = UDim.new(0,16)
 local rootStroke = Instance.new("UIStroke", rootFrame)
 rootStroke.Thickness = 2
-rootStroke.Color = Color3.fromRGB(10,140,220)
+rootStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+rootStroke.Transparency = 0.3
 
--- Header
+-- Header dengan efek glassmorphism
 local header = Instance.new("Frame", rootFrame)
 header.Size = UDim2.new(1, 0, 0, 64)
 header.Position = UDim2.new(0, 0, 0, 0)
-header.BackgroundTransparency = 1
+header.BackgroundColor3 = COLOR_PALETTE.DEEP_BLUE
+header.BackgroundTransparency = 0.2
+header.BorderSizePixel = 0
+
+local headerCorner = Instance.new("UICorner", header)
+headerCorner.CornerRadius = UDim.new(0, 16)
+
+local headerStroke = Instance.new("UIStroke", header)
+headerStroke.Thickness = 1
+headerStroke.Color = COLOR_PALETTE.MEDIUM_BLUE
+headerStroke.Transparency = 0.5
 
 local title = Instance.new("TextLabel", header)
 title.Size = UDim2.new(0.6, -20, 1, -12)
@@ -287,8 +432,8 @@ title.Position = UDim2.new(0, 16, 0, 6)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBlack
 title.TextSize = 22
-title.TextColor3 = Color3.fromRGB(245,245,245)
-title.Text = "ZiaanHub"
+title.TextColor3 = COLOR_PALETTE.WHITE
+title.Text = "ZiaanHub Ocean"
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 local subtitle = Instance.new("TextLabel", header)
@@ -297,8 +442,8 @@ subtitle.Position = UDim2.new(0.6, 12, 0, 6)
 subtitle.BackgroundTransparency = 1
 subtitle.Font = Enum.Font.Gotham
 subtitle.TextSize = 13
-subtitle.TextColor3 = Color3.fromRGB(190,190,190)
-subtitle.Text = "by Ziaan • modern"
+subtitle.TextColor3 = COLOR_PALETTE.LIGHT_CYAN
+subtitle.Text = "by Ziaan • deep ocean edition"
 
 -- header buttons
 local btnMin = Instance.new("TextButton", header)
@@ -307,8 +452,14 @@ btnMin.Position = UDim2.new(1, -104, 0, 14)
 btnMin.Text = "—"
 btnMin.Font = Enum.Font.GothamBold
 btnMin.TextSize = 20
-btnMin.BackgroundColor3 = Color3.fromRGB(36,36,38)
+btnMin.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+btnMin.BackgroundTransparency = 0.5
+btnMin.TextColor3 = COLOR_PALETTE.WHITE
 Instance.new("UICorner", btnMin).CornerRadius = UDim.new(0,8)
+local btnMinStroke = Instance.new("UIStroke", btnMin)
+btnMinStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+btnMinStroke.Thickness = 1
+btnMinStroke.Transparency = 0.5
 
 local btnClose = Instance.new("TextButton", header)
 btnClose.Size = UDim2.new(0, 44, 0, 36)
@@ -316,8 +467,14 @@ btnClose.Position = UDim2.new(1, -52, 0, 14)
 btnClose.Text = "✕"
 btnClose.Font = Enum.Font.GothamBold
 btnClose.TextSize = 16
-btnClose.BackgroundColor3 = Color3.fromRGB(38,38,40)
+btnClose.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+btnClose.BackgroundTransparency = 0.5
+btnClose.TextColor3 = COLOR_PALETTE.WHITE
 Instance.new("UICorner", btnClose).CornerRadius = UDim.new(0,8)
+local btnCloseStroke = Instance.new("UIStroke", btnClose)
+btnCloseStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+btnCloseStroke.Thickness = 1
+btnCloseStroke.Transparency = 0.5
 
 -- Left tabs (vertical)
 local leftPanel = Instance.new("Frame", rootFrame)
@@ -327,10 +484,14 @@ leftPanel.BackgroundTransparency = 1
 
 local leftBg = Instance.new("Frame", leftPanel)
 leftBg.Size = UDim2.new(1, 0, 1, 0)
-leftBg.BackgroundColor3 = Color3.fromRGB(14,14,16)
+leftBg.BackgroundColor3 = COLOR_PALETTE.DEEP_BLUE
+leftBg.BackgroundTransparency = 0.2
 leftBg.BorderSizePixel = 0
 Instance.new("UICorner", leftBg).CornerRadius = UDim.new(0,12)
-local leftStroke = Instance.new("UIStroke", leftBg); leftStroke.Thickness = 1; leftStroke.Color = Color3.fromRGB(45,45,45)
+local leftStroke = Instance.new("UIStroke", leftBg)
+leftStroke.Thickness = 1
+leftStroke.Color = COLOR_PALETTE.MEDIUM_BLUE
+leftStroke.Transparency = 0.5
 
 local tabsLayout = Instance.new("UIListLayout", leftBg)
 tabsLayout.Padding = UDim.new(0,12)
@@ -341,15 +502,42 @@ tabsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 local function makeTab(text)
     local btn = Instance.new("TextButton", leftBg)
     btn.Size = UDim2.new(1, -28, 0, 52)
-    btn.BackgroundColor3 = Color3.fromRGB(36,36,38)
+    btn.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+    btn.BackgroundTransparency = 0.5
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 15
     btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(235,235,235)
+    btn.TextColor3 = COLOR_PALETTE.WHITE
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
-    local stroke = Instance.new("UIStroke", btn); stroke.Thickness = 1; stroke.Color = Color3.fromRGB(55,55,55)
-    btn.MouseEnter:Connect(function() pcall(function() TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(46,46,48)}):Play() end) end)
-    btn.MouseLeave:Connect(function() pcall(function() TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(36,36,38)}):Play() end) end)
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Thickness = 1
+    stroke.Color = COLOR_PALETTE.LIGHT_BLUE
+    stroke.Transparency = 0.5
+    
+    btn.MouseEnter:Connect(function()
+        pcall(function()
+            TweenService:Create(btn, TweenInfo.new(0.12), {
+                BackgroundTransparency = 0.3,
+                BackgroundColor3 = COLOR_PALETTE.LIGHT_BLUE
+            }):Play()
+            TweenService:Create(stroke, TweenInfo.new(0.12), {
+                Transparency = 0.2
+            }):Play()
+        end)
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        pcall(function()
+            TweenService:Create(btn, TweenInfo.new(0.12), {
+                BackgroundTransparency = 0.5,
+                BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+            }):Play()
+            TweenService:Create(stroke, TweenInfo.new(0.12), {
+                Transparency = 0.5
+            }):Play()
+        end)
+    end)
+    
     return btn
 end
 
@@ -365,17 +553,26 @@ local function createPage(name)
     local f = Instance.new("Frame", pagesContainer)
     f.Size = UDim2.new(1, -12, 1, -12)
     f.Position = UDim2.new(0,6,0,6)
-    f.BackgroundColor3 = Color3.fromRGB(12,12,14)
+    f.BackgroundColor3 = COLOR_PALETTE.DEEP_BLUE
+    f.BackgroundTransparency = 0.15
     f.BorderSizePixel = 0
     f.Visible = false
-    Instance.new("UICorner", f).CornerRadius = UDim.new(0,10)
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0,12)
+    local fStroke = Instance.new("UIStroke", f)
+    fStroke.Color = COLOR_PALETTE.MEDIUM_BLUE
+    fStroke.Thickness = 1
+    fStroke.Transparency = 0.5
     pages[name] = f
     return f
 end
 
 local function showPage(name)
     if currentPage and currentPage ~= pages[name] then
-        pcall(function() TweenService:Create(currentPage, TweenInfo.new(0.12), {BackgroundTransparency = 1}):Play() end)
+        pcall(function()
+            TweenService:Create(currentPage, TweenInfo.new(0.12), {
+                BackgroundTransparency = 1
+            }):Play()
+        end)
         task.wait(0.12)
         currentPage.Visible = false
     end
@@ -383,7 +580,11 @@ local function showPage(name)
     if currentPage then
         currentPage.Visible = true
         currentPage.BackgroundTransparency = 1
-        pcall(function() TweenService:Create(currentPage, TweenInfo.new(0.12), {BackgroundTransparency = 0}):Play() end)
+        pcall(function()
+            TweenService:Create(currentPage, TweenInfo.new(0.12), {
+                BackgroundTransparency = 0.15
+            }):Play()
+        end)
     end
 end
 
@@ -404,8 +605,8 @@ do
     headerLabel.BackgroundTransparency = 1
     headerLabel.Font = Enum.Font.GothamBlack
     headerLabel.TextSize = 18
-    headerLabel.TextColor3 = Color3.fromRGB(245,245,245)
-    headerLabel.Text = "Welcome to ZiaanHub"
+    headerLabel.TextColor3 = COLOR_PALETTE.WHITE
+    headerLabel.Text = "Welcome to ZiaanHub Ocean"
 
     local desc = Instance.new("TextLabel", pageHome)
     desc.Size = UDim2.new(1, -24, 0, 100)
@@ -414,8 +615,8 @@ do
     desc.TextWrapped = true
     desc.Font = Enum.Font.Gotham
     desc.TextSize = 14
-    desc.TextColor3 = Color3.fromRGB(200,200,200)
-    desc.Text = "Modern hub by Ziaan. Fitur utama: WalkSpeed, JumpPower, Infinite Jump, Fly.\nUI mobile-friendly & works across most rigs/maps."
+    desc.TextColor3 = COLOR_PALETTE.LIGHT_CYAN
+    desc.Text = "Modern hub dengan tema deep ocean. Fitur utama: WalkSpeed, JumpPower, Infinite Jump, Fly.\nUI mobile-friendly & works across most rigs/maps."
 
     local discordBtn = Instance.new("TextButton", pageHome)
     discordBtn.Size = UDim2.new(0, 220, 0, 40)
@@ -423,9 +624,15 @@ do
     discordBtn.Text = "Copy Discord Invite"
     discordBtn.Font = Enum.Font.GothamBold
     discordBtn.TextSize = 14
-    discordBtn.BackgroundColor3 = Color3.fromRGB(40,40,44)
-    discordBtn.TextColor3 = Color3.fromRGB(240,240,240)
+    discordBtn.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+    discordBtn.BackgroundTransparency = 0.5
+    discordBtn.TextColor3 = COLOR_PALETTE.WHITE
     Instance.new("UICorner", discordBtn).CornerRadius = UDim.new(0,8)
+    local discordStroke = Instance.new("UIStroke", discordBtn)
+    discordStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+    discordStroke.Thickness = 1
+    discordStroke.Transparency = 0.5
+    
     discordBtn.MouseButton1Click:Connect(function()
         tryCopyToClipboard(DISCORD_INVITE)
     end)
@@ -436,7 +643,7 @@ do
     statusBar.BackgroundTransparency = 1
     statusBar.Font = Enum.Font.Gotham
     statusBar.TextSize = 13
-    statusBar.TextColor3 = Color3.fromRGB(200,200,200)
+    statusBar.TextColor3 = COLOR_PALETTE.LIGHT_CYAN
     statusBar.Text = "Key: "..(state.cachedKey and "cached" or "not cached")
     state._statusBar = statusBar
 end
@@ -449,7 +656,7 @@ do
         t.Position = UDim2.new(0, 12, 0, y)
         t.BackgroundTransparency = 1
         t.Font = Enum.Font.GothamBold
-        t.TextColor3 = Color3.fromRGB(230,230,230)
+        t.TextColor3 = COLOR_PALETTE.WHITE
         t.TextSize = 14
         t.Text = text
         return t
@@ -461,30 +668,46 @@ do
         local bar = Instance.new("Frame", parent)
         bar.Size = UDim2.new(0.6, 0, 0, 12)
         bar.Position = UDim2.new(0, 12, 0, labelY + 28)
-        bar.BackgroundColor3 = Color3.fromRGB(36,36,36)
+        bar.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+        bar.BackgroundTransparency = 0.5
         bar.BorderSizePixel = 0
         Instance.new("UICorner", bar).CornerRadius = UDim.new(0,6)
+        local barStroke = Instance.new("UIStroke", bar)
+        barStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+        barStroke.Thickness = 1
+        barStroke.Transparency = 0.5
 
         local fill = Instance.new("Frame", bar)
         fill.Size = UDim2.new(0,0,1,0)
-        fill.BackgroundColor3 = Color3.fromRGB(0,160,255)
+        fill.BackgroundColor3 = COLOR_PALETTE.CYAN
+        fill.BackgroundTransparency = 0.3
         Instance.new("UICorner", fill).CornerRadius = UDim.new(0,6)
 
         local knob = Instance.new("Frame", bar)
         knob.Size = UDim2.new(0, 18, 0, 18)
         knob.AnchorPoint = Vector2.new(0.5, 0.5)
         knob.Position = UDim2.new(0, 0, 0.5, 0)
-        knob.BackgroundColor3 = Color3.fromRGB(240,240,240)
+        knob.BackgroundColor3 = COLOR_PALETTE.WHITE
         Instance.new("UICorner", knob).CornerRadius = UDim.new(0,9)
+        local knobStroke = Instance.new("UIStroke", knob)
+        knobStroke.Color = COLOR_PALETTE.LIGHT_CYAN
+        knobStroke.Thickness = 1
 
         local valueBox = Instance.new("TextBox", parent)
         valueBox.Size = UDim2.new(0, 100, 0, 28)
         valueBox.Position = UDim2.new(0.62, 12, 0, labelY + 20)
-        valueBox.BackgroundColor3 = Color3.fromRGB(36,36,36)
-        valueBox.TextColor3 = Color3.fromRGB(230,230,230)
+        valueBox.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+        valueBox.BackgroundTransparency = 0.5
+        valueBox.TextColor3 = COLOR_PALETTE.WHITE
         valueBox.ClearTextOnFocus = false
         valueBox.Font = Enum.Font.Gotham
         valueBox.TextSize = 14
+        valueBox.PlaceholderColor3 = COLOR_PALETTE.LIGHT_CYAN
+        Instance.new("UICorner", valueBox).CornerRadius = UDim.new(0,8)
+        local valueStroke = Instance.new("UIStroke", valueBox)
+        valueStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+        valueStroke.Thickness = 1
+        valueStroke.Transparency = 0.5
 
         local dragging = false
         local function setValue(v)
@@ -564,7 +787,7 @@ do
     wsLabel.BackgroundTransparency = 1
     wsLabel.Font = Enum.Font.GothamBold
     wsLabel.TextSize = 14
-    wsLabel.TextColor3 = Color3.fromRGB(230,230,230)
+    wsLabel.TextColor3 = COLOR_PALETTE.WHITE
     wsLabel.Text = "WalkSpeed"
 
     local wsSlider = createSlider(pageFeatures, 12, 1, 350, state.ws)
@@ -601,7 +824,7 @@ do
     jpLabel.BackgroundTransparency = 1
     jpLabel.Font = Enum.Font.GothamBold
     jpLabel.TextSize = 14
-    jpLabel.TextColor3 = Color3.fromRGB(230,230,230)
+    jpLabel.TextColor3 = COLOR_PALETTE.WHITE
     jpLabel.Text = "JumpPower"
 
     local jpSlider = createSlider(pageFeatures, 96, 1, 500, state.jp)
@@ -632,12 +855,20 @@ do
     ijBtn.Text = "Infinite Jump • OFF (I)"
     ijBtn.Font = Enum.Font.GothamBold
     ijBtn.TextSize = 14
-    ijBtn.BackgroundColor3 = Color3.fromRGB(38,38,40)
+    ijBtn.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+    ijBtn.BackgroundTransparency = 0.5
+    ijBtn.TextColor3 = COLOR_PALETTE.WHITE
     Instance.new("UICorner", ijBtn).CornerRadius = UDim.new(0,8)
+    local ijStroke = Instance.new("UIStroke", ijBtn)
+    ijStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+    ijStroke.Thickness = 1
+    ijStroke.Transparency = 0.5
+    
     ijBtn.MouseButton1Click:Connect(function()
         setInfiniteJump(not state.infJump)
         ijBtn.Text = "Infinite Jump • "..(state.infJump and "ON (I)" or "OFF (I)")
-        ijBtn.BackgroundColor3 = state.infJump and Color3.fromRGB(0,160,90) or Color3.fromRGB(38,38,40)
+        ijBtn.BackgroundColor3 = state.infJump and COLOR_PALETTE.GREEN or COLOR_PALETTE.MEDIUM_BLUE
+        ijBtn.BackgroundTransparency = state.infJump and 0.3 or 0.5
     end)
 
     -- Fly toggle and speed input
@@ -647,24 +878,37 @@ do
     flyBtn.Text = "Fly • OFF (F)"
     flyBtn.Font = Enum.Font.GothamBold
     flyBtn.TextSize = 14
-    flyBtn.BackgroundColor3 = Color3.fromRGB(38,38,40)
+    flyBtn.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+    flyBtn.BackgroundTransparency = 0.5
+    flyBtn.TextColor3 = COLOR_PALETTE.WHITE
     Instance.new("UICorner", flyBtn).CornerRadius = UDim.new(0,8)
+    local flyBtnStroke = Instance.new("UIStroke", flyBtn)
+    flyBtnStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+    flyBtnStroke.Thickness = 1
+    flyBtnStroke.Transparency = 0.5
 
     local flyInput = Instance.new("TextBox", pageFeatures)
     flyInput.Size = UDim2.new(0, 120, 0, 34)
     flyInput.Position = UDim2.new(0, 306, 0, 252)
     flyInput.PlaceholderText = tostring(state.flySpeed)
     flyInput.ClearTextOnFocus = false
-    flyInput.BackgroundColor3 = Color3.fromRGB(36,36,36)
-    flyInput.TextColor3 = Color3.fromRGB(230,230,230)
+    flyInput.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+    flyInput.BackgroundTransparency = 0.5
+    flyInput.TextColor3 = COLOR_PALETTE.WHITE
+    flyInput.PlaceholderColor3 = COLOR_PALETTE.LIGHT_CYAN
     Instance.new("UICorner", flyInput).CornerRadius = UDim.new(0,8)
+    local flyInputStroke = Instance.new("UIStroke", flyInput)
+    flyInputStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+    flyInputStroke.Thickness = 1
+    flyInputStroke.Transparency = 0.5
 
     flyBtn.MouseButton1Click:Connect(function()
         local n = tonumber(flyInput.Text) or state.flySpeed or DEFAULT_FLY_SPEED
         state.flySpeed = math.clamp(n, 10, 500)
         setFly(not state.fly)
         flyBtn.Text = "Fly • "..(state.fly and "ON (F)" or "OFF (F)")
-        flyBtn.BackgroundColor3 = state.fly and Color3.fromRGB(0,160,90) or Color3.fromRGB(38,38,40)
+        flyBtn.BackgroundColor3 = state.fly and COLOR_PALETTE.GREEN or COLOR_PALETTE.MEDIUM_BLUE
+        flyBtn.BackgroundTransparency = state.fly and 0.3 or 0.5
     end)
 
     -- Reset
@@ -674,14 +918,21 @@ do
     resetBtn.Text = "Reset to Default (R)"
     resetBtn.Font = Enum.Font.GothamBold
     resetBtn.TextSize = 14
-    resetBtn.BackgroundColor3 = Color3.fromRGB(150,55,55)
+    resetBtn.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+    resetBtn.BackgroundTransparency = 0.5
+    resetBtn.TextColor3 = COLOR_PALETTE.WHITE
     Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,8)
+    local resetStroke = Instance.new("UIStroke", resetBtn)
+    resetStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+    resetStroke.Thickness = 1
+    resetStroke.Transparency = 0.5
+    
     resetBtn.MouseButton1Click:Connect(function()
         applyDefaults()
         wsSlider.Set(state.ws)
         jpSlider.Set(state.jp)
-        flyBtn.Text = "Fly • OFF (F)"; flyBtn.BackgroundColor3 = Color3.fromRGB(38,38,40)
-        ijBtn.Text = "Infinite Jump • OFF (I)"; ijBtn.BackgroundColor3 = Color3.fromRGB(38,38,40)
+        flyBtn.Text = "Fly • OFF (F)"; flyBtn.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE; flyBtn.BackgroundTransparency = 0.5
+        ijBtn.Text = "Infinite Jump • OFF (I)"; ijBtn.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE; ijBtn.BackgroundTransparency = 0.5
     end)
 end
 
@@ -693,8 +944,8 @@ do
     aboutTitle.BackgroundTransparency = 1
     aboutTitle.Font = Enum.Font.GothamBlack
     aboutTitle.TextSize = 18
-    aboutTitle.TextColor3 = Color3.fromRGB(245,245,245)
-    aboutTitle.Text = "About ZiaanHub"
+    aboutTitle.TextColor3 = COLOR_PALETTE.WHITE
+    aboutTitle.Text = "About ZiaanHub Ocean"
 
     local aboutTxt = Instance.new("TextLabel", pageAbout)
     aboutTxt.Size = UDim2.new(1, -24, 1, -64)
@@ -702,17 +953,24 @@ do
     aboutTxt.BackgroundTransparency = 1
     aboutTxt.Font = Enum.Font.Gotham
     aboutTxt.TextSize = 14
-    aboutTxt.TextColor3 = Color3.fromRGB(200,200,200)
+    aboutTxt.TextColor3 = COLOR_PALETTE.LIGHT_CYAN
     aboutTxt.TextWrapped = true
-    aboutTxt.Text = "ZiaanHub oleh Ziaan\nVersi: 2.2\nFitur: WalkSpeed, JumpPower, Infinite Jump, Fly.\nMobile & PC suport. Save config jika executor mendukung."
+    aboutTxt.Text = "ZiaanHub Ocean oleh Ziaan\nVersi: Deep Ocean Edition\nFitur: WalkSpeed, JumpPower, Infinite Jump, Fly.\nMobile & PC suport. Save config jika executor mendukung."
 
     local rememberBtn = Instance.new("TextButton", pageAbout)
     rememberBtn.Size = UDim2.new(0, 220, 0, 36)
     rememberBtn.Position = UDim2.new(0, 12, 1, -60)
     rememberBtn.Font = Enum.Font.GothamBold
     rememberBtn.TextSize = 14
-    rememberBtn.BackgroundColor3 = Color3.fromRGB(40,40,44)
+    rememberBtn.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+    rememberBtn.BackgroundTransparency = 0.5
+    rememberBtn.TextColor3 = COLOR_PALETTE.WHITE
     Instance.new("UICorner", rememberBtn).CornerRadius = UDim.new(0,8)
+    local rememberStroke = Instance.new("UIStroke", rememberBtn)
+    rememberStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+    rememberStroke.Thickness = 1
+    rememberStroke.Transparency = 0.5
+    
     rememberBtn.Text = "Remember Key: "..(state.rememberKey and "ON" or "OFF")
     rememberBtn.MouseButton1Click:Connect(function()
         state.rememberKey = not state.rememberKey
@@ -742,17 +1000,21 @@ btnMin.MouseButton1Click:Connect(function()
         TweenService:Create(rootFrame, TweenInfo.new(0.16), {Size = UDim2.new(0.92,0,0.86,0)}):Play()
     end
 end)
-btnClose.MouseButton1Click:Connect(function() pcall(function() ScreenGui:Destroy() end) end)
+btnClose.MouseButton1Click:Connect(function() pcall(function() ScreenGui:Destroy() blurEffect.Enabled = false end) end)
 
 -- =============== KEY OVERLAY ===============
 local keyOverlay = Instance.new("Frame", ScreenGui)
 keyOverlay.AnchorPoint = Vector2.new(0.5,0.5)
 keyOverlay.Size = UDim2.new(0.78, 0, 0.6, 0)
 keyOverlay.Position = UDim2.new(0.5, 0, 0.5, 0)
-keyOverlay.BackgroundColor3 = Color3.fromRGB(22,22,24)
+keyOverlay.BackgroundColor3 = COLOR_PALETTE.DARK_BLUE
+keyOverlay.BackgroundTransparency = 0.1
 keyOverlay.BorderSizePixel = 0
-Instance.new("UICorner", keyOverlay).CornerRadius = UDim.new(0,12)
-local keyStroke = Instance.new("UIStroke", keyOverlay); keyStroke.Color = Color3.fromRGB(0,150,255); keyStroke.Thickness = 2
+Instance.new("UICorner", keyOverlay).CornerRadius = UDim.new(0,16)
+local keyStroke = Instance.new("UIStroke", keyOverlay)
+keyStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+keyStroke.Thickness = 2
+keyStroke.Transparency = 0.3
 
 local keyTitle = Instance.new("TextLabel", keyOverlay)
 keyTitle.Size = UDim2.new(1, -36, 0, 34)
@@ -760,8 +1022,8 @@ keyTitle.Position = UDim2.new(0, 18, 0, 18)
 keyTitle.BackgroundTransparency = 1
 keyTitle.Font = Enum.Font.GothamBold
 keyTitle.TextSize = 18
-keyTitle.Text = "ZiaanHub | Masukkan Key"
-keyTitle.TextColor3 = Color3.fromRGB(245,245,245)
+keyTitle.Text = "ZiaanHub Ocean | Masukkan Key"
+keyTitle.TextColor3 = COLOR_PALETTE.WHITE
 
 local keyNote = Instance.new("TextLabel", keyOverlay)
 keyNote.Size = UDim2.new(1, -36, 0, 36)
@@ -770,15 +1032,22 @@ keyNote.BackgroundTransparency = 1
 keyNote.Font = Enum.Font.Gotham
 keyNote.TextSize = 14
 keyNote.TextWrapped = true
+keyNote.TextColor3 = COLOR_PALETTE.LIGHT_CYAN
 keyNote.Text = "Ambil key di Discord. Tekan Salin Discord untuk copy invite."
 
 local keyBox = Instance.new("TextBox", keyOverlay)
 keyBox.Size = UDim2.new(1, -36, 0, 48)
 keyBox.Position = UDim2.new(0, 18, 0, 108)
-keyBox.BackgroundColor3 = Color3.fromRGB(36,36,38)
-keyBox.TextColor3 = Color3.fromRGB(235,235,235)
+keyBox.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+keyBox.BackgroundTransparency = 0.5
+keyBox.TextColor3 = COLOR_PALETTE.WHITE
 keyBox.PlaceholderText = "Paste key di sini..."
+keyBox.PlaceholderColor3 = COLOR_PALETTE.LIGHT_CYAN
 Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0,8)
+local keyBoxStroke = Instance.new("UIStroke", keyBox)
+keyBoxStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+keyBoxStroke.Thickness = 1
+keyBoxStroke.Transparency = 0.5
 
 local keyVerifyBtn = Instance.new("TextButton", keyOverlay)
 keyVerifyBtn.Size = UDim2.new(0.48, -22, 0, 46)
@@ -786,8 +1055,14 @@ keyVerifyBtn.Position = UDim2.new(0, 18, 0, 170)
 keyVerifyBtn.Text = "Verifikasi Key"
 keyVerifyBtn.Font = Enum.Font.GothamBold
 keyVerifyBtn.TextSize = 14
-keyVerifyBtn.BackgroundColor3 = Color3.fromRGB(0,170,85)
+keyVerifyBtn.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+keyVerifyBtn.BackgroundTransparency = 0.5
+keyVerifyBtn.TextColor3 = COLOR_PALETTE.WHITE
 Instance.new("UICorner", keyVerifyBtn).CornerRadius = UDim.new(0,8)
+local keyVerifyStroke = Instance.new("UIStroke", keyVerifyBtn)
+keyVerifyStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+keyVerifyStroke.Thickness = 1
+keyVerifyStroke.Transparency = 0.5
 
 local keyDiscordBtn = Instance.new("TextButton", keyOverlay)
 keyDiscordBtn.Size = UDim2.new(0.48, -22, 0, 46)
@@ -795,8 +1070,14 @@ keyDiscordBtn.Position = UDim2.new(0.52, 4, 0, 170)
 keyDiscordBtn.Text = "Salin Discord"
 keyDiscordBtn.Font = Enum.Font.GothamBold
 keyDiscordBtn.TextSize = 14
-keyDiscordBtn.BackgroundColor3 = Color3.fromRGB(44,44,46)
+keyDiscordBtn.BackgroundColor3 = COLOR_PALETTE.MEDIUM_BLUE
+keyDiscordBtn.BackgroundTransparency = 0.5
+keyDiscordBtn.TextColor3 = COLOR_PALETTE.WHITE
 Instance.new("UICorner", keyDiscordBtn).CornerRadius = UDim.new(0,8)
+local keyDiscordStroke = Instance.new("UIStroke", keyDiscordBtn)
+keyDiscordStroke.Color = COLOR_PALETTE.LIGHT_BLUE
+keyDiscordStroke.Thickness = 1
+keyDiscordStroke.Transparency = 0.5
 
 local keyStatus = Instance.new("TextLabel", keyOverlay)
 keyStatus.Size = UDim2.new(1, -36, 0, 24)
@@ -804,48 +1085,54 @@ keyStatus.Position = UDim2.new(0, 18, 0, 226)
 keyStatus.BackgroundTransparency = 1
 keyStatus.Font = Enum.Font.Gotham
 keyStatus.TextSize = 14
-keyStatus.TextColor3 = Color3.fromRGB(255,120,120)
+keyStatus.TextColor3 = COLOR_PALETTE.RED
 keyStatus.TextXAlignment = Enum.TextXAlignment.Left
 
 if state.rememberKey and state.cachedKey then keyBox.Text = state.cachedKey end
 
 local function verifyKeyFlow()
-    keyStatus.TextColor3 = Color3.fromRGB(200,200,200)
+    keyStatus.TextColor3 = COLOR_PALETTE.LIGHT_CYAN
     keyStatus.Text = "Memeriksa key..."
     local keys = fetchKeysFromUrl(KEY_SOURCE_URL)
     if #keys == 0 then
-        keyStatus.TextColor3 = Color3.fromRGB(255,120,120)
+        keyStatus.TextColor3 = COLOR_PALETTE.RED
         keyStatus.Text = "Gagal ambil key dari server."
-        notify("Gagal ambil key.", 3)
+        notify("Gagal ambil key.", 3, "error")
         return
     end
     local input = (keyBox.Text or ""):gsub("^%s+",""):gsub("%s+$","")
     if input == "" then
-        keyStatus.TextColor3 = Color3.fromRGB(255,120,120)
+        keyStatus.TextColor3 = COLOR_PALETTE.RED
         keyStatus.Text = "Masukkan key terlebih dahulu."
         return
     end
     for _,k in ipairs(keys) do
         if input == k then
-            keyStatus.TextColor3 = Color3.fromRGB(120,255,140)
+            keyStatus.TextColor3 = COLOR_PALETTE.GREEN
             keyStatus.Text = "Key valid! Membuka UI..."
-            notify("Key valid. Welcome!", 3)
+            notify("Key valid. Welcome!", 3, "success")
             state.hasAccess = true
             if state.rememberKey then state.cachedKey = input; persist() end
             task.wait(0.45)
             -- animate out
-            pcall(function() TweenService:Create(keyOverlay, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {BackgroundTransparency = 1, Position = keyOverlay.Position + UDim2.new(0,0,0,40)}):Play() end)
+            pcall(function()
+                TweenService:Create(keyOverlay, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+                    BackgroundTransparency = 1, 
+                    Position = keyOverlay.Position + UDim2.new(0,0,0,40)
+                }):Play()
+            end)
             task.wait(0.18)
             keyOverlay.Visible = false
             rootFrame.Visible = true
+            blurEffect.Enabled = true
             applyDefaults()
             if state._statusBar then state._statusBar.Text = "Key: valid" end
             return
         end
     end
-    keyStatus.TextColor3 = Color3.fromRGB(255,120,120)
+    keyStatus.TextColor3 = COLOR_PALETTE.RED
     keyStatus.Text = "Key tidak ditemukan. Cek Discord."
-    notify("Key salah.", 3)
+    notify("Key salah.", 3, "error")
     if state._statusBar then state._statusBar.Text = "Key: invalid" end
 end
 
@@ -866,18 +1153,26 @@ UIS.InputBegan:Connect(function(input, processed)
             if state.uiVisible then
                 rootFrame.Visible = true
                 rootFrame.Position = UDim2.new(0.5, 0, 0.5, -20)
-                TweenService:Create(rootFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+                TweenService:Create(rootFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                    Position = UDim2.new(0.5, 0, 0.5, 0)
+                }):Play()
+                blurEffect.Enabled = true
             else
-                TweenService:Create(rootFrame, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {Position = UDim2.new(0.5, 0, 0.5, 60)}):Play()
-                task.delay(0.18, function() rootFrame.Visible = false end)
+                TweenService:Create(rootFrame, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+                    Position = UDim2.new(0.5, 0, 0.5, 60)
+                }):Play()
+                task.delay(0.18, function()
+                    rootFrame.Visible = false
+                    blurEffect.Enabled = false
+                end)
             end
         else
             keyOverlay.Visible = not keyOverlay.Visible
         end
     elseif input.KeyCode == Enum.KeyCode.I then
-        if state.hasAccess then setInfiniteJump(not state.infJump); notify("InfiniteJump "..(state.infJump and "ON" or "OFF"),2) end
+        if state.hasAccess then setInfiniteJump(not state.infJump); notify("InfiniteJump "..(state.infJump and "ON" or "OFF"),2, "info") end
     elseif input.KeyCode == Enum.KeyCode.F then
-        if state.hasAccess then setFly(not state.fly); notify("Fly "..(state.fly and "ON" or "OFF"),2) end
+        if state.hasAccess then setFly(not state.fly); notify("Fly "..(state.fly and "ON" or "OFF"),2, "info") end
     elseif input.KeyCode == Enum.KeyCode.R then
         if state.hasAccess then applyDefaults() end
     end
@@ -893,6 +1188,7 @@ if state.rememberKey and state.cachedKey then
                     state.hasAccess = true
                     keyOverlay.Visible = false
                     rootFrame.Visible = true
+                    blurEffect.Enabled = true
                     applyDefaults()
                     if state._statusBar then state._statusBar.Text = "Key: valid (auto)" end
                     return
@@ -902,7 +1198,7 @@ if state.rememberKey and state.cachedKey then
     end)
 end
 
-notify("ZiaanHub siap. Tekan K untuk membuka/tutup (setelah verifikasi).", 5)
+notify("ZiaanHub Ocean siap. Tekan K untuk membuka/tutup (setelah verifikasi).", 5, "info")
 
 -- cleanup hook
 _G.ZiaanHubCleanup = function()
@@ -911,4 +1207,5 @@ _G.ZiaanHubCleanup = function()
     if state.flyGyro then pcall(function() state.flyGyro:Destroy() end); state.flyGyro=nil end
     if state.flyVel then pcall(function() state.flyVel:Destroy() end); state.flyVel=nil end
     pcall(function() ScreenGui:Destroy() end)
+    pcall(function() blurEffect:Destroy() end)
 end
