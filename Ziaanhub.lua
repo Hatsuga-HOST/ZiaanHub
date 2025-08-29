@@ -1,7 +1,4 @@
-if game.PlaceId == 126884695634066 then
-
-    -- Load Rayfield Library
-    local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
     -- Create Main Window
     local Window = Rayfield:CreateWindow({
@@ -33,7 +30,7 @@ if game.PlaceId == 126884695634066 then
         KeySettings = {
             Title = "ZiaanHub | Key System",
             Subtitle = "Masukin Key Dulu Gan",
-            Note = "Ambil Key dari Discord!",
+            Note = "Key Nya lol !",
             FileName = "ziaanhubkey",
             SaveKey = true, -- biar user ga usah masukin ulang key setiap buka
             GrabKeyFromSite = true, -- ambil key dari Pastebin
