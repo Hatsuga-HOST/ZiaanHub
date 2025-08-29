@@ -1,5 +1,5 @@
 -- ZiaanHub.lua
-local KeySystem = loadstring(game:HttpGet("https://raw.githubusercontent.com/USERNAME/ZiaanHub/main/KeySystem.lua"))()
+local KeySystem = loadstring(game:HttpGet("https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/KeySystem.lua"))()
 local ZiaanUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/ZiaanUI.lua"))()
 
 -- GUI Input Key
