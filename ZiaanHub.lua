@@ -11,7 +11,7 @@
 --]]
 
 -- ============== CONFIG ==============
-local KEY_SOURCE_URL    = "https://pastebin.com/raw/3vaUdQ30"  -- RAW text: satu key per baris
+local KEY_SOURCE_URL    = "https://pastebin.com/3vaUdQ30"  -- RAW text: satu key per baris
 local DISCORD_INVITE    = "https://discord.gg/vzbJt9XQ"
 local DEFAULT_WALKSPEED = 16
 local DEFAULT_JUMPPOWER = 50
