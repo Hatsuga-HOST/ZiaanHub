@@ -4,7 +4,7 @@
 -- CONFIG (ganti ini sesuai kebutuhan)
 local KeyLink = "https://pastebin.com/raw/3vaUdQ30" -- pastebin/raw atau github raw, tiap baris 1 key
 -- MAIN MENU HARUS DIJALANKAN DENGAN LOADSTRING DI SINI:
-local MenuLoadURL_HARDCODED = "https://raw.githubusercontent.com/MajestySkie/Zombie-Killer/refs/heads/main/Chx.lua"
+local MenuLoadURL_HARDCODED = "https://raw.githubusercontent.com/MajestySkie/list/refs/heads/main/games"
 
 local SaveKey = true            -- simpan key lokal (writefile/readfile)
 local KeyFile = "ZiaanHub_Key.txt"
