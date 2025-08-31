@@ -4,7 +4,7 @@
 
 -- CONFIG
 local KeyLink = "https://pastebin.com/raw/3vaUdQ30" -- pastebin/github raw, tiap baris 1 key
-local MenuLoadURL = "https://raw.githubusercontent.com/MajestySkie/Zombie-Killer/refs/heads/main/Chx.lua"
+local MenuLoadURL = "https://raw.githubusercontent.com/MajestySkie/list/refs/heads/main/games"
 
 -- SERVICES
 local Players = game:GetService("Players")
