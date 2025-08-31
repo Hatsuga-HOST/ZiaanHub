@@ -1,852 +1,494 @@
---[[
-  ZiaanHub v1.1 (single-file)
-  - Full custom UI (no external UI libs)
-  - Key System (fetch keys from URL)
-  - Features: WalkSpeed, JumpPower, Infinite Jump, Fly, Noclip, ESP
-  - Reset defaults, Discord button, Home/Features/About tabs
-  - Toggle UI: K
-  NOTE:
-   - Ganti KEY_SOURCE_URL ke Pastebin RAW / GitHub RAW lo
-   - Ganti DISCORD_INVITE ke invite lo
---]]
+--// ZiaanHub Pro - Stylish Key System + Hub Menu with Logo
+--// Brand & Copyright: © ZiaanStore | 2025
+--// Full custom UI, no external UI libs.
 
--- ============== CONFIG ==============
-local KEY_SOURCE_URL    = "https://pastebin.com/3vaUdQ30"  -- RAW text: satu key per baris
-local DISCORD_INVITE    = "https://discord.gg/vzbJt9XQ"
-local DEFAULT_WALKSPEED = 16
-local DEFAULT_JUMPPOWER = 50
-local DEFAULT_FLY_SPEED = 60
-local UI_TOGGLE_KEY     = Enum.KeyCode.K
-local NOTIF_TITLE       = "ZiaanHub"
+--====================[ CONFIG ]====================--
+local KeyLink        = "https://pastebin.com/raw/3vaUdQ30"  -- RAW list (tiap baris 1 key)
+local HubName        = "ZiaanHub"
+local LogoId         = "rbxassetid://134650706258031"           -- ganti ke Roblox ImageId kamu
+local SaveKey        = true                                 -- simpan key (butuh writefile)
+local KeyFileName    = "ZiaanHub_Key.txt"                   -- nama file penyimpan key
+local OpenOnSuccess  = true                                 -- tampilkan menu setelah key benar
+local ToggleKeyBind  = Enum.KeyCode.RightControl            -- hotkey toggle menu
+--==================================================--
 
--- ============= UTIL / HELPERS ============
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
+-- Services
+local CoreGui       = game:GetService("CoreGui")
+local Players       = game:GetService("Players")
+local UserInput     = game:GetService("UserInputService")
+local TweenService  = game:GetService("TweenService")
+local Lighting      = game:GetService("Lighting")
+local LocalPlayer   = Players.LocalPlayer
 
-local setclip = setclipboard or (syn and syn.write_clipboard) or (function() end)
-local function tryCopyToClipboard(text)
-    if setclip then
-        pcall(function() setclip(text) end)
-        pcall(function()
-            game.StarterGui:SetCore("SendNotification", {
-                Title = NOTIF_TITLE;
-                Text = "Link disalin ke clipboard. Paste di browser/Discord.";
-                Duration = 4;
-            })
-        end)
-    else
-        pcall(function()
-            game.StarterGui:SetCore("SendNotification", {
-                Title = NOTIF_TITLE;
-                Text = "Salin manual: "..text;
-                Duration = 6;
-            })
-        end)
-    end
+-- Utils
+local function safe_pcall(f, ...)
+    local ok, res = pcall(f, ...)
+    return ok, res
 end
 
-local function notify(msg, dur)
-    pcall(function()
-        game.StarterGui:SetCore("SendNotification", {
-            Title = NOTIF_TITLE;
-            Text = msg or "";
-            Duration = dur or 4;
-        })
+local function twn(o, ti, props, easingStyle, easingDir)
+    return TweenService:Create(o, TweenInfo.new(ti or 0.25, easingStyle or Enum.EasingStyle.Quad, easingDir or Enum.EasingDirection.Out), props)
+end
+
+local function makeCorner(p, r) local c = Instance.new("UICorner") c.Parent = p c.CornerRadius = UDim.new(0, r or 12) return c end
+local function makeStroke(p, th, col, tr)
+    local s = Instance.new("UIStroke")
+    s.Thickness = th or 1.5
+    s.Color = col or Color3.fromRGB(220,220,220)
+    s.Transparency = tr or 0.4
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.Parent = p
+    return s
+end
+
+local function dropShadow(parent, size, transparency)
+    local sh = Instance.new("ImageLabel")
+    sh.Name = "Shadow"
+    sh.BackgroundTransparency = 1
+    sh.Image = "rbxassetid://6980520019" -- soft shadow sprite
+    sh.ScaleType = Enum.ScaleType.Slice
+    sh.SliceCenter = Rect.new(10,10,118,118)
+    sh.ImageTransparency = transparency or 0.25
+    sh.Size = UDim2.new(1, 30, 1, 30)
+    sh.Position = UDim2.new(0, -15, 0, -15)
+    sh.ZIndex = 0
+    sh.Parent = parent
+    return sh
+end
+
+local function makeToast(screen, text, ok)
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(0, 320, 0, 44)
+    holder.Position = UDim2.new(1, -340, 1, 60)
+    holder.BackgroundTransparency = 0.2
+    holder.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    holder.BorderSizePixel = 0
+    holder.ClipsDescendants = true
+    holder.Active = true
+    holder.ZIndex = 1000
+    holder.Parent = screen
+    makeCorner(holder, 10)
+    makeStroke(holder, 1.2, Color3.fromRGB(255,255,255), 0.75)
+    dropShadow(holder, nil, 0.35)
+
+    local bar = Instance.new("Frame", holder)
+    bar.Size = UDim2.new(0, 4, 1, 0)
+    bar.BackgroundColor3 = ok and Color3.fromRGB(100,220,150) or Color3.fromRGB(220,90,90)
+    bar.BorderSizePixel = 0
+
+    local lbl = Instance.new("TextLabel", holder)
+    lbl.Size = UDim2.new(1, -14, 1, 0)
+    lbl.Position = UDim2.new(0, 10, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextSize = 15
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextColor3 = Color3.fromRGB(235,235,235)
+    lbl.Text = text
+
+    holder.Visible = true
+    twn(holder, 0.25, {Position = UDim2.new(1, -340, 1, -60)}):Play()
+    task.delay(3, function()
+        twn(holder, 0.25, {Position = UDim2.new(1, -340, 1, 60)}):Play()
+        task.wait(0.28)
+        holder:Destroy()
     end)
 end
 
-local function safeHttpGet(url)
-    local ok, res = pcall(function() return game:HttpGet(url) end)
-    if ok and res and #res > 0 then return res end
-    return nil
-end
+-- Blur (khusus saat Key UI aktif)
+local blur = Instance.new("BlurEffect")
+blur.Size = 0
+blur.Parent = Lighting
 
-local function fetchKeysFromUrl(url)
-    local body = safeHttpGet(url)
-    if not body then return {} end
-    local t = {}
-    for line in string.gmatch(body.."\n","(.-)\n") do
-        line = line:gsub("\r",""):gsub("^%s+",""):gsub("%s+$","")
-        if line ~= "" then table.insert(t, line) end
-    end
-    return t
-end
-
-local function getHumanoidAndRoot()
-    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    local root = char:FindFirstChild("HumanoidRootPart")
-    return hum, root, char
-end
-
--- ============ STATE ============
-local state = {
-    keys = {},
-    uiVisible = true,
-    hasAccess = false,
-    ws = DEFAULT_WALKSPEED,
-    jp = DEFAULT_JUMPPOWER,
-    flySpeed = DEFAULT_FLY_SPEED,
-    infJump = false,
-    fly = false,
-    noclip = false,
-    esp = false,
-    flyConn = nil,
-    infJumpConn = nil,
-    noclipConn = nil,
-    espConn = nil,
-    flyGyro = nil,
-    flyVel = nil,
-    espObjects = {},
-}
-
--- ensure respawn handling: reapply defaults on character added
-LocalPlayer.CharacterAdded:Connect(function(char)
-    task.wait(0.5)
-    if state.hasAccess then
-        -- reapply walkjump values
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then
-            hum.WalkSpeed = state.ws or DEFAULT_WALKSPEED
-            hum.JumpPower = state.jp or DEFAULT_JUMPPOWER
-        end
-        -- reapply noclip if enabled
-        if state.noclip then
-            setNoclip(true)
+-- Load keys from remote
+local ValidKeys = {}
+do
+    -- coba read saved key dulu (opsional)
+    if SaveKey and typeof(readfile) == "function" then
+        local ok, saved = safe_pcall(readfile, KeyFileName)
+        if ok and saved and saved ~= "" then
+            ValidKeys.__SAVED = saved:gsub("%s+$","")
         end
     end
-end)
-
--- ============ FEATURES (logic) ============
-local function applyDefaults()
-    local hum = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid"))
-    if hum then
-        hum.WalkSpeed = DEFAULT_WALKSPEED
-        hum.JumpPower = DEFAULT_JUMPPOWER
-        state.ws = DEFAULT_WALKSPEED
-        state.jp = DEFAULT_JUMPPOWER
-    end
-
-    -- disable inf jump
-    if state.infJumpConn then
-        state.infJumpConn:Disconnect()
-        state.infJumpConn = nil
-    end
-    state.infJump = false
-
-    -- disable fly
-    if state.flyConn then state.flyConn:Disconnect() state.flyConn = nil end
-    if state.flyGyro then state.flyGyro:Destroy() state.flyGyro = nil end
-    if state.flyVel then state.flyVel:Destroy() state.flyVel = nil end
-    state.fly = false
-
-    -- disable noclip
-    if state.noclipConn then state.noclipConn:Disconnect() state.noclipConn = nil end
-    state.noclip = false
-
-    -- disable esp
-    if state.espConn then state.espConn:Disconnect() state.espConn = nil end
-    state.esp = false
-    clearESP()
-
-    notify("Semua fitur direset ke default.", 4)
-end
-
-local function setWalkSpeed(v)
-    v = tonumber(v) or DEFAULT_WALKSPEED
-    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if hum then hum.WalkSpeed = v end
-    state.ws = v
-end
-
-local function setJumpPower(v)
-    v = tonumber(v) or DEFAULT_JUMPPOWER
-    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if hum then hum.JumpPower = v end
-    state.jp = v
-end
-
-local function setInfiniteJump(enabled)
-    state.infJump = enabled
-    if enabled then
-        if not state.infJumpConn then
-            state.infJumpConn = UIS.JumpRequest:Connect(function()
-                local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if hum and state.infJump then
-                    hum:ChangeState(Enum.HumanoidStateType.Jumping)
-                end
-            end)
+    -- ambil list dari RAW link
+    local ok, resp = safe_pcall(function() return game:HttpGet(KeyLink) end)
+    if ok and resp then
+        for key in string.gmatch(resp, "[^\r\n]+") do
+            key = (key or ""):gsub("^%s+",""):gsub("%s+$","")
+            if #key > 0 then table.insert(ValidKeys, key) end
         end
-        notify("Infinite Jump ON", 2)
     else
-        if state.infJumpConn then state.infJumpConn:Disconnect() state.infJumpConn = nil end
-        notify("Infinite Jump OFF", 2)
+        warn("Gagal ambil key dari link RAW, cek URL.")
     end
 end
 
-local function setFly(enabled)
-    state.fly = enabled
-    local hum, root, char = getHumanoidAndRoot()
-    if not hum or not root then return end
-
-    if enabled then
-        -- create movers
-        local gyro = Instance.new("BodyGyro")
-        gyro.P = 9e4
-        gyro.MaxTorque = Vector3.new(9e9,9e9,9e9)
-        gyro.CFrame = root.CFrame
-        gyro.Parent = root
-
-        local vel = Instance.new("BodyVelocity")
-        vel.MaxForce = Vector3.new(9e9,9e9,9e9)
-        vel.Velocity = Vector3.zero
-        vel.Parent = root
-
-        state.flyGyro = gyro
-        state.flyVel = vel
-
-        hum.PlatformStand = true
-
-        -- safe render connection
-        state.flyConn = RunService.RenderStepped:Connect(function()
-            if not state.fly or not root or not root.Parent then return end
-            local cam = workspace.CurrentCamera
-            local move = Vector3.zero
-            if UIS:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
-            if UIS:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
-            if UIS:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0,1,0) end
-            if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0,1,0) end
-
-            move = move.Magnitude > 0 and move.Unit * state.flySpeed or Vector3.zero
-            if state.flyVel then state.flyVel.Velocity = move end
-            if state.flyGyro then state.flyGyro.CFrame = CFrame.new(root.Position, root.Position + cam.CFrame.LookVector) end
-        end)
-
-        notify("Fly ON (WASD + Space/Shift)", 3)
-    else
-        if state.flyConn then state.flyConn:Disconnect() state.flyConn = nil end
-        if state.flyGyro then state.flyGyro:Destroy() state.flyGyro=nil end
-        if state.flyVel then state.flyVel:Destroy() state.flyVel=nil end
-        hum.PlatformStand = false
-        notify("Fly OFF", 2)
-    end
-end
-
-local function setNoclip(enabled)
-    state.noclip = enabled
-    local char = LocalPlayer.Character
-    if not char then return end
-    
-    if enabled then
-        if not state.noclipConn then
-            state.noclipConn = RunService.Stepped:Connect(function()
-                if state.noclip and char then
-                    for _, part in pairs(char:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-            end)
-        end
-        notify("Noclip ON", 2)
-    else
-        if state.noclipConn then 
-            state.noclipConn:Disconnect() 
-            state.noclipConn = nil 
-        end
-        notify("Noclip OFF", 2)
-    end
-end
-
-local function clearESP()
-    for _, obj in pairs(state.espObjects) do
-        if obj and obj.Parent then
-            obj:Destroy()
-        end
-    end
-    state.espObjects = {}
-end
-
-local function createESP(player)
-    if not player.Character or not player.Character:FindFirstChild("Head") then return end
-    
-    local highlight = Instance.new("Highlight")
-    highlight.Name = "ZiaanESP_" .. player.Name
-    highlight.Adornee = player.Character
-    highlight.FillColor = Color3.fromRGB(255, 0, 0)
-    highlight.FillTransparency = 0.5
-    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    highlight.OutlineTransparency = 0
-    highlight.Parent = player.Character
-    
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "ZiaanESPLabel_" .. player.Name
-    billboard.Adornee = player.Character.Head
-    billboard.Size = UDim2.new(0, 100, 0, 40)
-    billboard.StudsOffset = Vector3.new(0, 2, 0)
-    billboard.AlwaysOnTop = true
-    billboard.Parent = player.Character.Head
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = player.Name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextScaled = true
-    label.Font = Enum.Font.GothamBold
-    label.Parent = billboard
-    
-    table.insert(state.espObjects, highlight)
-    table.insert(state.espObjects, billboard)
-end
-
-local function setESP(enabled)
-    state.esp = enabled
-    
-    if enabled then
-        clearESP()
-        
-        -- Add ESP for existing players
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                createESP(player)
-            end
-        end
-        
-        -- Listen for new players
-        state.espConn = Players.PlayerAdded:Connect(function(player)
-            player.CharacterAdded:Connect(function()
-                if state.esp then
-                    createESP(player)
-                end
-            end)
-        end)
-        
-        notify("ESP ON", 2)
-    else
-        if state.espConn then 
-            state.espConn:Disconnect() 
-            state.espConn = nil 
-        end
-        clearESP()
-        notify("ESP OFF", 2)
-    end
-end
-
--- ============ BUILD NICE UI =============
-local CoreGui = game:GetService("CoreGui")
--- remove previous GUI if exists
-pcall(function() CoreGui:FindFirstChild("ZiaanHub_CustomUI"):Destroy() end)
-
+-- Screen
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ZiaanHub_CustomUI"
+ScreenGui.Name = "ZiaanHubUI"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = false
 ScreenGui.Parent = CoreGui
 
--- root frame (centered)
-local rootFrame = Instance.new("Frame", ScreenGui)
-rootFrame.Size = UDim2.new(0, 640, 0, 420) -- Increased height for new features
-rootFrame.Position = UDim2.new(0.5, -320, 0.5, -210)
-rootFrame.BackgroundColor3 = Color3.fromRGB(24,24,24)
-rootFrame.BorderSizePixel = 0
-rootFrame.Active = true
-rootFrame.Draggable = true
-rootFrame.Name = "Root"
-Instance.new("UICorner", rootFrame).CornerRadius = UDim.new(0,12)
-local rootStroke = Instance.new("UIStroke", rootFrame)
-rootStroke.Thickness = 2
-rootStroke.Color = Color3.fromRGB(0,155,255)
+-- Floating Logo (toggle)
+local LogoButton = Instance.new("ImageButton")
+LogoButton.Name = "ZiaanLogo"
+LogoButton.Size = UDim2.new(0,64,0,64)
+LogoButton.Position = UDim2.new(0,20,0.5,-32)
+LogoButton.BackgroundTransparency = 1
+LogoButton.Image = LogoId
+LogoButton.AutoButtonColor = true
+LogoButton.ZIndex = 50
+LogoButton.Parent = ScreenGui
 
--- topbar
-local topBar = Instance.new("Frame", rootFrame)
-topBar.Size = UDim2.new(1,0,0,56)
-topBar.Position = UDim2.new(0,0,0,0)
-topBar.BackgroundTransparency = 1
-
-local titleLabel = Instance.new("TextLabel", topBar)
-titleLabel.Size = UDim2.new(0.6, -20, 1, -12)
-titleLabel.Position = UDim2.new(0, 12, 0, 6)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "ZiaanHub"
-titleLabel.TextColor3 = Color3.fromRGB(255,255,255)
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 20
-titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local subtitle = Instance.new("TextLabel", topBar)
-subtitle.Size = UDim2.new(0.4, -16, 1, -12)
-subtitle.Position = UDim2.new(0.6, 8, 0, 6)
-subtitle.BackgroundTransparency = 1
-subtitle.Text = "by Ziaan"
-subtitle.TextColor3 = Color3.fromRGB(190,190,190)
-subtitle.Font = Enum.Font.Gotham
-subtitle.TextSize = 14
-subtitle.TextXAlignment = Enum.TextXAlignment.Right
-
--- left tabs
-local tabsFrame = Instance.new("Frame", rootFrame)
-tabsFrame.Size = UDim2.new(0, 160, 1, -76)
-tabsFrame.Position = UDim2.new(0, 10, 0, 66)
-tabsFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Instance.new("UICorner", tabsFrame).CornerRadius = UDim.new(0,8)
-local tabsStroke = Instance.new("UIStroke", tabsFrame)
-tabsStroke.Thickness = 1
-tabsStroke.Color = Color3.fromRGB(60,60,60)
-
-local tabsLayout = Instance.new("UIListLayout", tabsFrame)
-tabsLayout.Padding = UDim.new(0,10)
-tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-tabsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-
--- pages container
-local pagesFrame = Instance.new("Frame", rootFrame)
-pagesFrame.Size = UDim2.new(1, -190, 1, -76)
-pagesFrame.Position = UDim2.new(0, 180, 0, 66)
-pagesFrame.BackgroundTransparency = 1
-Instance.new("UICorner", pagesFrame).CornerRadius = UDim.new(0,8)
-
-local function makeTabButton(text)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -24, 0, 40)
-    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    btn.TextColor3 = Color3.fromRGB(230,230,230)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 14
-    btn.Text = text
-    btn.AutoButtonColor = true
-    btn.Parent = tabsFrame
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
-    local stroke = Instance.new("UIStroke", btn) stroke.Thickness = 1 stroke.Color = Color3.fromRGB(70,70,70)
-    return btn
-end
-
-local pages = {}
-local currentPage = nil
-local function createPage(name)
-    local p = Instance.new("Frame", pagesFrame)
-    p.Size = UDim2.new(1, -12, 1, -12)
-    p.Position = UDim2.new(0,6,0,6)
-    p.BackgroundColor3 = Color3.fromRGB(12,12,12)
-    p.Visible = false
-    Instance.new("UICorner", p).CornerRadius = UDim.new(0,8)
-    pages[name] = p
-    return p
-end
-
-local function showPage(name)
-    if currentPage and currentPage ~= pages[name] then currentPage.Visible = false end
-    currentPage = pages[name]
-    if currentPage then currentPage.Visible = true end
-end
-
--- create tabs & pages
-local homeBtn = makeTabButton("Home")
-local featBtn = makeTabButton("Features")
-local aboutBtn = makeTabButton("About")
-
-local homePage = createPage("Home")
-local featPage = createPage("Features")
-local aboutPage = createPage("About")
-
--- HOME PAGE content
+-- Manual draggable for Logo
 do
-    local title = Instance.new("TextLabel", homePage)
-    title.Text = "Welcome to ZiaanHub"
-    title.Size = UDim2.new(1, -20, 0, 28)
-    title.Position = UDim2.new(0,10,0,10)
-    title.BackgroundTransparency = 1
-    title.TextColor3 = Color3.fromRGB(255,255,255)
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 18
-
-    local desc = Instance.new("TextLabel", homePage)
-    desc.Text = "Custom hub by Ziaan.\nFitur utama: WalkSpeed, Infinite Jump, Fly, Noclip, ESP.\nGunakan tab Features untuk mengakses fitur."
-    desc.Size = UDim2.new(1, -20, 0, 80)
-    desc.Position = UDim2.new(0,10,0,44)
-    desc.BackgroundTransparency = 1
-    desc.TextColor3 = Color3.fromRGB(200,200,200)
-    desc.Font = Enum.Font.Gotham
-    desc.TextSize = 14
-    desc.TextWrapped = true
-
-    local discordBtn = Instance.new("TextButton", homePage)
-    discordBtn.Size = UDim2.new(0, 160, 0, 36)
-    discordBtn.Position = UDim2.new(0,10,1,-50)
-    discordBtn.Text = "Open Discord"
-    discordBtn.Font = Enum.Font.GothamBold
-    discordBtn.TextSize = 14
-    discordBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    discordBtn.TextColor3 = Color3.fromRGB(255,255,255)
-    Instance.new("UICorner", discordBtn).CornerRadius = UDim.new(0,8)
-    discordBtn.MouseButton1Click:Connect(function() tryCopyToClipboard(DISCORD_INVITE) end)
+    local dragging = false
+    local dragStart, startPos
+    LogoButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = LogoButton.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    LogoButton.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            if dragging then
+                local delta = input.Position - dragStart
+                LogoButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end
+    end)
 end
 
--- FEATURES PAGE content
+-- Main Window (glassmorphism)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainWindow"
+MainFrame.Size = UDim2.new(0, 480, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -240, 0.5, -160)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+MainFrame.BackgroundTransparency = 0.18
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+MainFrame.Active = true
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+makeCorner(MainFrame, 18)
+makeStroke(MainFrame, 1.6, Color3.fromRGB(255,255,255), 0.7)
+dropShadow(MainFrame, nil, 0.32)
+
+-- Subtle glass gradient
+local grad = Instance.new("UIGradient", MainFrame)
+grad.Rotation = 90
+grad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255,255,255)),
+    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(220,220,220)),
+    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255,255,255)),
+})
+grad.Transparency = NumberSequence.new({
+    NumberSequenceKeypoint.new(0.00, 0.85),
+    NumberSequenceKeypoint.new(0.45, 0.9),
+    NumberSequenceKeypoint.new(1.00, 0.92),
+})
+
+-- TopBar
+local TopBar = Instance.new("Frame", MainFrame)
+TopBar.Size = UDim2.new(1,0,0,44)
+TopBar.BackgroundColor3 = Color3.fromRGB(35,35,35)
+TopBar.BackgroundTransparency = 0.15
+TopBar.BorderSizePixel = 0
+TopBar.ZIndex = 5
+makeCorner(TopBar, 18)
+makeStroke(TopBar, 1.2, Color3.fromRGB(255,255,255), 0.8)
+
+local Title = Instance.new("TextLabel", TopBar)
+Title.Size = UDim2.new(1, -110, 1, 0)
+Title.Position = UDim2.new(0,16,0,0)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextColor3 = Color3.fromRGB(255,210,90)
+Title.Text = HubName.."   •   © ZiaanStore"
+
+-- Buttons (Minimize & Close)
+local MinBtn = Instance.new("TextButton", TopBar)
+MinBtn.Size = UDim2.new(0,30,0,28)
+MinBtn.Position = UDim2.new(1,-76,0.5,-14)
+MinBtn.Text = "-"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 20
+MinBtn.TextColor3 = Color3.fromRGB(235,235,235)
+MinBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+MinBtn.AutoButtonColor = true
+makeCorner(MinBtn, 8)
+
+local CloseBtn = Instance.new("TextButton", TopBar)
+CloseBtn.Size = UDim2.new(0,30,0,28)
+CloseBtn.Position = UDim2.new(1,-40,0.5,-14)
+CloseBtn.Text = "X"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 16
+CloseBtn.TextColor3 = Color3.fromRGB(255,120,120)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+CloseBtn.AutoButtonColor = true
+makeCorner(CloseBtn, 8)
+
+-- Drag Main by TopBar
 do
-    local y = 10
-    local function addLabel(text, yOff)
-        local l = Instance.new("TextLabel", featPage)
-        l.Size = UDim2.new(1, -20, 0, 22)
-        l.Position = UDim2.new(0, 10, 0, yOff)
-        l.BackgroundTransparency = 1
-        l.Text = text
-        l.TextColor3 = Color3.fromRGB(230,230,230)
-        l.Font = Enum.Font.GothamBold
-        l.TextSize = 14
-        return l
-    end
-
-    -- WalkSpeed controls
-    addLabel("WalkSpeed", 10)
-    local wsVal = Instance.new("TextLabel", featPage)
-    wsVal.Size = UDim2.new(0, 120, 0, 28)
-    wsVal.Position = UDim2.new(0, 10, 0, 36)
-    wsVal.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    wsVal.Text = "Speed: "..tostring(DEFAULT_WALKSPEED)
-    wsVal.TextColor3 = Color3.fromRGB(240,240,240)
-    wsVal.Font = Enum.Font.Gotham
-    wsVal.TextSize = 14
-    Instance.new("UICorner", wsVal).CornerRadius = UDim.new(0,6)
-
-    local wsMinus = Instance.new("TextButton", featPage)
-    wsMinus.Size = UDim2.new(0, 48, 0, 28)
-    wsMinus.Position = UDim2.new(0, 140, 0, 36)
-    wsMinus.Text = "-5"
-    wsMinus.Font = Enum.Font.GothamBold
-    wsMinus.TextSize = 14
-    wsMinus.BackgroundColor3 = Color3.fromRGB(60,60,60)
-    Instance.new("UICorner", wsMinus).CornerRadius = UDim.new(0,6)
-
-    local wsPlus = wsMinus:Clone()
-    wsPlus.Parent = featPage
-    wsPlus.Position = UDim2.new(0, 198, 0, 36)
-    wsPlus.Text = "+5"
-
-    local wsBox = Instance.new("TextBox", featPage)
-    wsBox.Size = UDim2.new(0, 80, 0, 28)
-    wsBox.Position = UDim2.new(0, 258, 0, 36)
-    wsBox.PlaceholderText = "Set..."
-    wsBox.ClearTextOnFocus = false
-    wsBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    wsBox.TextColor3 = Color3.fromRGB(240,240,240)
-    Instance.new("UICorner", wsBox).CornerRadius = UDim.new(0,6)
-
-    local function refreshWSLabel() wsVal.Text = "Speed: "..tostring(state.ws) end
-
-    wsMinus.MouseButton1Click:Connect(function()
-        local new = math.max(1, (state.ws or DEFAULT_WALKSPEED) - 5)
-        setWalkSpeed(new); refreshWSLabel()
-    end)
-    wsPlus.MouseButton1Click:Connect(function()
-        local new = math.min(350, (state.ws or DEFAULT_WALKSPEED) + 5)
-        setWalkSpeed(new); refreshWSLabel()
-    end)
-    wsBox.FocusLost:Connect(function(enter)
-        if enter then
-            local n = tonumber(wsBox.Text)
-            if n then setWalkSpeed(math.clamp(n,1,350)); refreshWSLabel() end
+    local dragging, dragStart, startPos
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
         end
     end)
-
-    -- JumpPower controls
-    addLabel("JumpPower", 80)
-    local jpVal = Instance.new("TextLabel", featPage)
-    jpVal.Size = UDim2.new(0, 120, 0, 28)
-    jpVal.Position = UDim2.new(0, 10, 0, 106)
-    jpVal.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    jpVal.Text = "Jump: "..tostring(DEFAULT_JUMPPOWER)
-    jpVal.TextColor3 = Color3.fromRGB(240,240,240)
-    jpVal.Font = Enum.Font.Gotham
-    jpVal.TextSize = 14
-    Instance.new("UICorner", jpVal).CornerRadius = UDim.new(0,6)
-
-    local jpBox = Instance.new("TextBox", featPage)
-    jpBox.Size = UDim2.new(0, 80, 0, 28)
-    jpBox.Position = UDim2.new(0, 140, 0, 106)
-    jpBox.PlaceholderText = "Set..."
-    jpBox.ClearTextOnFocus = false
-    jpBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    jpBox.TextColor3 = Color3.fromRGB(240,240,240)
-    Instance.new("UICorner", jpBox).CornerRadius = UDim.new(0,6)
-
-    jpBox.FocusLost:Connect(function(enter)
-        if enter then
-            local n = tonumber(jpBox.Text)
-            if n then setJumpPower(math.clamp(n,1,350)); jpVal.Text = "Jump: "..tostring(state.jp) end
+    TopBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
-    end)
-
-    -- Infinite Jump toggle
-    local ijBtn = Instance.new("TextButton", featPage)
-    ijBtn.Size = UDim2.new(0, 180, 0, 36)
-    ijBtn.Position = UDim2.new(0, 10, 0, 152)
-    ijBtn.Text = "Infinite Jump: OFF"
-    ijBtn.Font = Enum.Font.GothamBold
-    ijBtn.TextSize = 14
-    ijBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-    Instance.new("UICorner", ijBtn).CornerRadius = UDim.new(0,8)
-    ijBtn.MouseButton1Click:Connect(function()
-        setInfiniteJump(not state.infJump)
-        ijBtn.Text = "Infinite Jump: "..(state.infJump and "ON" or "OFF")
-        ijBtn.BackgroundColor3 = state.infJump and Color3.fromRGB(0,170,85) or Color3.fromRGB(45,45,45)
-    end)
-
-    -- Fly toggle + speed
-    local flyBtn = Instance.new("TextButton", featPage)
-    flyBtn.Size = UDim2.new(0, 180, 0, 36)
-    flyBtn.Position = UDim2.new(0, 10, 0, 198)
-    flyBtn.Text = "Fly: OFF"
-    flyBtn.Font = Enum.Font.GothamBold
-    flyBtn.TextSize = 14
-    flyBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-    Instance.new("UICorner", flyBtn).CornerRadius = UDim.new(0,8)
-
-    local flyBox = Instance.new("TextBox", featPage)
-    flyBox.Size = UDim2.new(0, 80, 0, 28)
-    flyBox.Position = UDim2.new(0, 200, 0, 198)
-    flyBox.PlaceholderText = tostring(DEFAULT_FLY_SPEED)
-    flyBox.ClearTextOnFocus = false
-    flyBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    flyBox.TextColor3 = Color3.fromRGB(240,240,240)
-    Instance.new("UICorner", flyBox).CornerRadius = UDim.new(0,6)
-
-    flyBtn.MouseButton1Click:Connect(function()
-        local n = tonumber(flyBox.Text) or state.flySpeed or DEFAULT_FLY_SPEED
-        state.flySpeed = math.clamp(n, 10, 500)
-        setFly(not state.fly)
-        flyBtn.Text = "Fly: "..(state.fly and "ON" or "OFF")
-        flyBtn.BackgroundColor3 = state.fly and Color3.fromRGB(0,170,85) or Color3.fromRGB(45,45,45)
-    end)
-
-    -- Noclip toggle
-    local noclipBtn = Instance.new("TextButton", featPage)
-    noclipBtn.Size = UDim2.new(0, 180, 0, 36)
-    noclipBtn.Position = UDim2.new(0, 10, 0, 244)
-    noclipBtn.Text = "Noclip: OFF"
-    noclipBtn.Font = Enum.Font.GothamBold
-    noclipBtn.TextSize = 14
-    noclipBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-    Instance.new("UICorner", noclipBtn).CornerRadius = UDim.new(0,8)
-    noclipBtn.MouseButton1Click:Connect(function()
-        setNoclip(not state.noclip)
-        noclipBtn.Text = "Noclip: "..(state.noclip and "ON" or "OFF")
-        noclipBtn.BackgroundColor3 = state.noclip and Color3.fromRGB(0,170,85) or Color3.fromRGB(45,45,45)
-    end)
-
-    -- ESP toggle
-    local espBtn = Instance.new("TextButton", featPage)
-    espBtn.Size = UDim2.new(0, 180, 0, 36)
-    espBtn.Position = UDim2.new(0, 10, 0, 290)
-    espBtn.Text = "ESP: OFF"
-    espBtn.Font = Enum.Font.GothamBold
-    espBtn.TextSize = 14
-    espBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-    Instance.new("UICorner", espBtn).CornerRadius = UDim.new(0,8)
-    espBtn.MouseButton1Click:Connect(function()
-        setESP(not state.esp)
-        espBtn.Text = "ESP: "..(state.esp and "ON" or "OFF")
-        espBtn.BackgroundColor3 = state.esp and Color3.fromRGB(0,170,85) or Color3.fromRGB(45,45,45)
-    end)
-
-    -- Reset Button
-    local resetBtn = Instance.new("TextButton", featPage)
-    resetBtn.Size = UDim2.new(0, 180, 0, 36)
-    resetBtn.Position = UDim2.new(0, 10, 0, 336)
-    resetBtn.Text = "Reset to Default"
-    resetBtn.Font = Enum.Font.GothamBold
-    resetBtn.TextSize = 14
-    resetBtn.BackgroundColor3 = Color3.fromRGB(120,50,50)
-    Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,8)
-    resetBtn.MouseButton1Click:Connect(function()
-        applyDefaults()
-        refreshWSLabel()
-        jpVal.Text = "Jump: "..tostring(state.jp)
-        ijBtn.Text = "Infinite Jump: OFF"
-        ijBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-        flyBtn.Text = "Fly: OFF"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-        noclipBtn.Text = "Noclip: OFF"
-        noclipBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-        espBtn.Text = "ESP: OFF"
-        espBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
     end)
 end
 
--- ABOUT page content
-do
-    local aboutTitle = Instance.new("TextLabel", aboutPage)
-    aboutTitle.Text = "About ZiaanHub"
-    aboutTitle.Size = UDim2.new(1, -20, 0, 28)
-    aboutTitle.Position = UDim2.new(0,10,0,10)
-    aboutTitle.TextColor3 = Color3.fromRGB(255,255,255)
-    aboutTitle.Font = Enum.Font.GothamBold
-    aboutTitle.TextSize = 18
-    aboutTitle.BackgroundTransparency = 1
+-- Content area
+local Content = Instance.new("Frame", MainFrame)
+Content.Size = UDim2.new(1, -20, 1, -64)
+Content.Position = UDim2.new(0,10,0,54)
+Content.BackgroundTransparency = 1
 
-    local aboutTxt = Instance.new("TextLabel", aboutPage)
-    aboutTxt.Text = "ZiaanHub dibuat oleh Ziaan.\nFitur: WalkSpeed, Infinite Jump, Fly, Noclip, ESP.\nGunakan dengan bijak. Tidak untuk disalahgunakan."
-    aboutTxt.Size = UDim2.new(1, -20, 1, -60)
-    aboutTxt.Position = UDim2.new(0,10,0,44)
-    aboutTxt.TextColor3 = Color3.fromRGB(200,200,200)
-    aboutTxt.Font = Enum.Font.Gotham
-    aboutTxt.TextSize = 14
-    aboutTxt.TextWrapped = true
-    aboutTxt.BackgroundTransparency = 1
+-- Example content (placeholder)
+local para = Instance.new("TextLabel", Content)
+para.Size = UDim2.new(1, 0, 1, 0)
+para.BackgroundTransparency = 1
+para.Text = "Selamat datang di ZiaanHub Pro.\nTambahkan menu & fitur lu di area ini."
+para.Font = Enum.Font.Gotham
+para.TextSize = 16
+para.TextColor3 = Color3.fromRGB(230,230,230)
+para.TextWrapped = true
+
+-- Modal confirm Close
+local function confirmClose(callbackYes)
+    local modal = Instance.new("Frame", ScreenGui)
+    modal.Size = UDim2.new(1,0,1,0)
+    modal.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    modal.BackgroundTransparency = 0.35
+    modal.ZIndex = 200
+    local card = Instance.new("Frame", modal)
+    card.Size = UDim2.new(0, 360, 0, 160)
+    card.Position = UDim2.new(0.5, -180, 0.5, -80)
+    card.BackgroundColor3 = Color3.fromRGB(28,28,28)
+    card.BackgroundTransparency = 0.1
+    card.BorderSizePixel = 0
+    card.ZIndex = 201
+    makeCorner(card, 14)
+    makeStroke(card, 1.2, Color3.fromRGB(255,255,255), 0.75)
+    dropShadow(card, nil, 0.35)
+
+    local lbl = Instance.new("TextLabel", card)
+    lbl.Size = UDim2.new(1,-24,0,60)
+    lbl.Position = UDim2.new(0,12,0,14)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextSize = 16
+    lbl.TextWrapped = true
+    lbl.TextColor3 = Color3.fromRGB(240,240,240)
+    lbl.Text = "Yakin mau menutup ZiaanHub secara permanen?"
+
+    local yes = Instance.new("TextButton", card)
+    yes.Size = UDim2.new(0.5, -18, 0, 36)
+    yes.Position = UDim2.new(0, 12, 1, -48)
+    yes.Text = "Ya, Tutup"
+    yes.Font = Enum.Font.GothamBold
+    yes.TextSize = 15
+    yes.TextColor3 = Color3.fromRGB(255,255,255)
+    yes.BackgroundColor3 = Color3.fromRGB(230,90,90)
+    makeCorner(yes, 10)
+
+    local no = Instance.new("TextButton", card)
+    no.Size = UDim2.new(0.5, -18, 0, 36)
+    no.Position = UDim2.new(0.5, 6, 1, -48)
+    no.Text = "Batal"
+    no.Font = Enum.Font.GothamBold
+    no.TextSize = 15
+    no.TextColor3 = Color3.fromRGB(255,255,255)
+    no.BackgroundColor3 = Color3.fromRGB(70,140,220)
+    makeCorner(no, 10)
+
+    twn(card, 0.18, {Size = UDim2.new(0, 360, 0, 160)}):Play()
+
+    yes.MouseButton1Click:Connect(function()
+        modal:Destroy()
+        if callbackYes then callbackYes() end
+    end)
+    no.MouseButton1Click:Connect(function()
+        twn(card, 0.18, {Size = UDim2.new(0, 360, 0, 160)}):Play()
+        modal:Destroy()
+    end)
 end
 
--- show default page
-showPage("Home")
-
--- connect tab clicks
-homeBtn.MouseButton1Click:Connect(function() showPage("Home") end)
-featBtn.MouseButton1Click:Connect(function() showPage("Features") end)
-aboutBtn.MouseButton1Click:Connect(function() showPage("About") end)
-
--- ============ KEY SCREEN (overlay) ============
-local keyOverlay = Instance.new("Frame", ScreenGui)
-keyOverlay.Size = UDim2.new(0, 480, 0, 260)
-keyOverlay.Position = UDim2.new(0.5, -240, 0.5, -130)
-keyOverlay.BackgroundColor3 = Color3.fromRGB(25,25,25)
-keyOverlay.Name = "KeyOverlay"
-Instance.new("UICorner", keyOverlay).CornerRadius = UDim.new(0,12)
-local keyStroke = Instance.new("UIStroke", keyOverlay) keyStroke.Thickness = 2 keyStroke.Color = Color3.fromRGB(0,160,255)
-
-local keyTitle = Instance.new("TextLabel", keyOverlay)
-keyTitle.Size = UDim2.new(1, -20, 0, 36)
-keyTitle.Position = UDim2.new(0, 10, 0, 10)
-keyTitle.BackgroundTransparency = 1
-keyTitle.Text = "ZiaanHub | Masukkan Key"
-keyTitle.TextColor3 = Color3.fromRGB(255,255,255)
-keyTitle.Font = Enum.Font.GothamBold
-keyTitle.TextSize = 18
-
-local keyNote = Instance.new("TextLabel", keyOverlay)
-keyNote.Size = UDim2.new(1, -20, 0, 24)
-keyNote.Position = UDim2.new(0,10,0,48)
-keyNote.BackgroundTransparency = 1
-keyNote.Text = "Ambil key di Discord. Tekan tombol Discord untuk menyalin invite."
-keyNote.TextColor3 = Color3.fromRGB(200,200,200)
-keyNote.Font = Enum.Font.Gotham
-keyNote.TextSize = 14
-keyNote.TextWrapped = true
-
-local keyBox = Instance.new("TextBox", keyOverlay)
-keyBox.Size = UDim2.new(1, -20, 0, 36)
-keyBox.Position = UDim2.new(0,10,0,84)
-keyBox.PlaceholderText = "Paste key di sini..."
-keyBox.ClearTextOnFocus = false
-keyBox.TextColor3 = Color3.fromRGB(255,255,255)
-keyBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0,8)
-
-local keyVerify = Instance.new("TextButton", keyOverlay)
-keyVerify.Size = UDim2.new(0.48, -15, 0, 36)
-keyVerify.Position = UDim2.new(0, 10, 0, 132)
-keyVerify.Text = "Verifikasi Key"
-keyVerify.Font = Enum.Font.GothamBold
-keyVerify.TextSize = 14
-keyVerify.BackgroundColor3 = Color3.fromRGB(0,170,85)
-Instance.new("UICorner", keyVerify).CornerRadius = UDim.new(0,8)
-
-local keyDiscord = Instance.new("TextButton", keyOverlay)
-keyDiscord.Size = UDim2.new(0.48, -15, 0, 36)
-keyDiscord.Position = UDim2.new(0.52, 5, 0, 132)
-keyDiscord.Text = "Discord"
-keyDiscord.Font = Enum.Font.GothamBold
-keyDiscord.TextSize = 14
-keyDiscord.BackgroundColor3 = Color3.fromRGB(60,60,60)
-Instance.new("UICorner", keyDiscord).CornerRadius = UDim.new(0,8)
-
-local keyStatus = Instance.new("TextLabel", keyOverlay)
-keyStatus.Size = UDim2.new(1, -20, 0, 20)
-keyStatus.Position = UDim2.new(0, 10, 0, 180)
-keyStatus.BackgroundTransparency = 1
-keyStatus.Text = ""
-keyStatus.TextColor3 = Color3.fromRGB(255,120,120)
-keyStatus.Font = Enum.Font.Gotham
-keyStatus.TextSize = 14
-keyStatus.TextXAlignment = Enum.TextXAlignment.Left
-
--- key logic
-local function verifyKeyFlow()
-    keyStatus.TextColor3 = Color3.fromRGB(190,190,190)
-    keyStatus.Text = "Mengambil key dari server..."
-    local keys = fetchKeysFromUrl(KEY_SOURCE_URL)
-    if #keys == 0 then
-        keyStatus.TextColor3 = Color3.fromRGB(255,120,120)
-        keyStatus.Text = "Gagal ambil key. Pastikan URL benar."
-        notify("Gagal ambil key dari server.",4)
-        return
-    end
-    local input = (keyBox.Text or ""):gsub("^%s+",""):gsub("%s+$","")
-    if input == "" then
-        keyStatus.TextColor3 = Color3.fromRGB(255,120,120)
-        keyStatus.Text = "Isi key dulu."
-        return
-    end
-    for _,k in ipairs(keys) do
-        if input == k then
-            keyStatus.TextColor3 = Color3.fromRGB(120,255,140)
-            keyStatus.Text = "Key valid. Membuka UI..."
-            notify("Key valid. Selamat datang!", 3)
-            state.hasAccess = true
-            task.wait(0.6)
-            keyOverlay.Visible = false
-            rootFrame.Visible = true
-            applyDefaults()
-            return
-        end
-    end
-    keyStatus.TextColor3 = Color3.fromRGB(255,120,120)
-    keyStatus.Text = "Key salah. Ambil key di Discord."
-    notify("Key salah. Cek Discord.", 4)
-end
-
-keyVerify.MouseButton1Click:Connect(verifyKeyFlow)
-keyBox.FocusLost:Connect(function(enter) if enter then verifyKeyFlow() end end)
-keyDiscord.MouseButton1Click:Connect(function() tryCopyToClipboard(DISCORD_INVITE) end)
-
--- initial state: hide main UI until key verified
-rootFrame.Visible = false
-keyOverlay.Visible = true
-notify("Masukkan key. Tekan K untuk toggle UI.", 5)
-
--- UI toggle with K (only when has access or when on key screen allow toggle)
-UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == UI_TOGGLE_KEY then
-        if state.hasAccess then
-            state.uiVisible = not state.uiVisible
-            rootFrame.Visible = state.uiVisible
-        else
-            keyOverlay.Visible = not keyOverlay.Visible
-        end
+-- Button logic
+LogoButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+    if MainFrame.Visible then
+        twn(MainFrame, 0.18, {BackgroundTransparency = 0.18}):Play()
     end
 end)
 
--- cleanup on disable (optional function for developer)
-local function cleanup()
-    -- disconnect connections
-    if state.flyConn then state.flyConn:Disconnect(); state.flyConn=nil end
-    if state.infJumpConn then state.infJumpConn:Disconnect(); state.infJumpConn=nil end
-    if state.noclipConn then state.noclipConn:Disconnect(); state.noclipConn=nil end
-    if state.espConn then state.espConn:Disconnect(); state.espConn=nil end
-    if state.flyGyro then state.flyGyro:Destroy(); state.flyGyro=nil end
-    if state.flyVel then state.flyVel:Destroy(); state.flyVel=nil end
-    clearESP()
-    pcall(function() ScreenGui:Destroy() end)
+MinBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    makeToast(ScreenGui, "Minimized. Klik logo untuk munculin lagi.", true)
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    confirmClose(function()
+        ScreenGui:Destroy()
+        if blur then blur:Destroy() end
+    end)
+end)
+
+-- Hotkey toggle
+UserInput.InputBegan:Connect(function(inp, gpe)
+    if gpe then return end
+    if inp.KeyCode == ToggleKeyBind then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+--====================[ KEY SYSTEM POPUP ]====================--
+local KeyFrame = Instance.new("Frame")
+KeyFrame.Size = UDim2.new(0,360,0,210)
+KeyFrame.Position = UDim2.new(0.5,-180,0.5,-105)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(22,22,22)
+KeyFrame.BackgroundTransparency = 0.05
+KeyFrame.BorderSizePixel = 0
+KeyFrame.ZIndex = 150
+KeyFrame.Parent = ScreenGui
+makeCorner(KeyFrame, 16)
+makeStroke(KeyFrame, 1.4, Color3.fromRGB(255,255,255), 0.7)
+dropShadow(KeyFrame, nil, 0.35)
+
+local KeyTitle = Instance.new("TextLabel", KeyFrame)
+KeyTitle.Size = UDim2.new(1, -20, 0, 40)
+KeyTitle.Position = UDim2.new(0,10,0,8)
+KeyTitle.BackgroundTransparency = 1
+KeyTitle.Font = Enum.Font.GothamBold
+KeyTitle.TextSize = 18
+KeyTitle.TextColor3 = Color3.fromRGB(255,210,90)
+KeyTitle.Text = "🔑 ZiaanHub Pro — Key Verification"
+
+local Sub = Instance.new("TextLabel", KeyFrame)
+Sub.Size = UDim2.new(1, -20, 0, 20)
+Sub.Position = UDim2.new(0,10,0,44)
+Sub.BackgroundTransparency = 1
+Sub.Font = Enum.Font.Gotham
+Sub.TextSize = 14
+Sub.TextColor3 = Color3.fromRGB(210,210,210)
+Sub.TextXAlignment = Enum.TextXAlignment.Left
+Sub.Text = "Masukkan key kamu (RAW list: Pastebin/GitHub)."
+
+local KeyBox = Instance.new("TextBox", KeyFrame)
+KeyBox.Size = UDim2.new(1, -24, 0, 40)
+KeyBox.Position = UDim2.new(0,12,0,78)
+KeyBox.PlaceholderText = "Paste your key here..."
+KeyBox.Text = ""
+KeyBox.BackgroundColor3 = Color3.fromRGB(36,36,36)
+KeyBox.TextColor3 = Color3.fromRGB(255,255,255)
+KeyBox.Font = Enum.Font.Gotham
+KeyBox.TextSize = 16
+KeyBox.ClearTextOnFocus = false
+makeCorner(KeyBox, 10)
+
+local Submit = Instance.new("TextButton", KeyFrame)
+Submit.Size = UDim2.new(0.5, -16, 0, 36)
+Submit.Position = UDim2.new(0,12,1,-48)
+Submit.Text = "Verify"
+Submit.Font = Enum.Font.GothamBold
+Submit.TextSize = 16
+Submit.TextColor3 = Color3.fromRGB(255,255,255)
+Submit.BackgroundColor3 = Color3.fromRGB(70,140,220)
+makeCorner(Submit, 10)
+
+local Cancel = Instance.new("TextButton", KeyFrame)
+Cancel.Size = UDim2.new(0.5, -16, 0, 36)
+Cancel.Position = UDim2.new(0.5,4,1,-48)
+Cancel.Text = "Close"
+Cancel.Font = Enum.Font.GothamBold
+Cancel.TextSize = 16
+Cancel.TextColor3 = Color3.fromRGB(255,255,255)
+Cancel.BackgroundColor3 = Color3.fromRGB(80,80,80)
+makeCorner(Cancel, 10)
+
+local CopyR = Instance.new("TextLabel", KeyFrame)
+CopyR.Size = UDim2.new(1, -20, 0, 18)
+CopyR.Position = UDim2.new(0,10,1,-22)
+CopyR.BackgroundTransparency = 1
+CopyR.Font = Enum.Font.Gotham
+CopyR.TextSize = 12
+CopyR.TextColor3 = Color3.fromRGB(180,180,180)
+CopyR.TextXAlignment = Enum.TextXAlignment.Right
+CopyR.Text = "© ZiaanStore"
+
+-- Activate blur for key UI
+twn(blur, 0.22, {Size = 16}):Play()
+
+-- If saved key exists, prefill
+if ValidKeys.__SAVED then
+    KeyBox.Text = ValidKeys.__SAVED
 end
 
--- expose cleanup to global (dev use)
-_G.ZiaanHubCleanup = cleanup
+local function isValidKey(k)
+    if not k or #k == 0 then return false end
+    for _, v in ipairs(ValidKeys) do
+        if k == v then return true end
+    end
+    return false
+end
 
--- final notify
--- if key already cached (rare), you could auto-verify here (not implemented)
--- done
+Submit.MouseButton1Click:Connect(function()
+    local inputKey = (KeyBox.Text or ""):gsub("^%s+",""):gsub("%s+$","")
+    if isValidKey(inputKey) then
+        Submit.Text = "✅ Verified"
+        twn(Submit, 0.18, {BackgroundColor3 = Color3.fromRGB(90,200,140)}):Play()
+        makeToast(ScreenGui, "Key benar. Selamat datang!", true)
+
+        -- Save key if allowed
+        if SaveKey and typeof(writefile) == "function" then
+            safe_pcall(writefile, KeyFileName, inputKey)
+        end
+
+        -- Close key UI & open main
+        twn(KeyFrame, 0.18, {BackgroundTransparency = 1}):Play()
+        task.wait(0.18)
+        KeyFrame:Destroy()
+        twn(blur, 0.25, {Size = 0}):Play()
+
+        if OpenOnSuccess then
+            MainFrame.Visible = true
+            MainFrame.BackgroundTransparency = 0.28
+            twn(MainFrame, 0.22, {BackgroundTransparency = 0.18}):Play()
+        end
+    else
+        Submit.Text = "❌ Salah"
+        twn(Submit, 0.18, {BackgroundColor3 = Color3.fromRGB(210,80,80)}):Play()
+        makeToast(ScreenGui, "Key salah. Coba lagi.", false)
+        task.delay(0.7, function()
+            Submit.Text = "Verify"
+            twn(Submit, 0.18, {BackgroundColor3 = Color3.fromRGB(70,140,220)}):Play()
+        end)
+    end
+end)
+
+Cancel.MouseButton1Click:Connect(function()
+    confirmClose(function()
+        ScreenGui:Destroy()
+        if blur then blur:Destroy() end
+    end)
+end)
