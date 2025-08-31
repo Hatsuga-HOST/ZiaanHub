@@ -1,6 +1,6 @@
--- ZiaanHub Key System (Enhanced UI)
+-- ZiaanHub Key System (Premium UI)
 -- By ZiaanStore © 2025
--- Modern Dark Theme with Blue Accents
+-- Professional Dark Theme with Contained Animations
 
 -- CONFIG
 local KeyLink = "https://pastebin.com/raw/3vaUdQ30"
@@ -13,6 +13,7 @@ local UserInput = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
 
 -- HELPERS
 local function tween(obj, time, props)
@@ -67,7 +68,7 @@ local blur = Instance.new("BlurEffect", Lighting)
 blur.Size = 0
 tween(blur, 0.5, {Size = 16})
 
--- Background overlay
+-- Background overlay with gradient
 local Overlay = Instance.new("Frame", ScreenGui)
 Overlay.Size = UDim2.new(1, 0, 1, 0)
 Overlay.BackgroundColor3 = Color3.fromRGB(5, 10, 18)
@@ -91,22 +92,28 @@ Main.BorderSizePixel = 0
 makeCorner(Main, 16)
 makeStroke(Main, Color3.fromRGB(40, 90, 160), 2)
 
--- Animated background elements
-local BgCircle1 = Instance.new("Frame", Main)
-BgCircle1.Size = UDim2.new(0, 200, 0, 200)
-BgCircle1.Position = UDim2.new(0.1, 0, 0.7, 0)
+-- Create a clipping frame to contain the animated elements
+local ClipFrame = Instance.new("Frame", Main)
+ClipFrame.Size = UDim2.new(1, 0, 1, 0)
+ClipFrame.BackgroundTransparency = 1
+ClipFrame.ClipsDescendants = true
+
+-- Animated background elements (contained within the frame)
+local BgCircle1 = Instance.new("Frame", ClipFrame)
+BgCircle1.Size = UDim2.new(0, 180, 0, 180)
+BgCircle1.Position = UDim2.new(0.05, 0, 0.7, 0)
 BgCircle1.BackgroundColor3 = Color3.fromRGB(25, 60, 120)
 BgCircle1.BackgroundTransparency = 0.9
 BgCircle1.BorderSizePixel = 0
-makeCorner(BgCircle1, 100)
+makeCorner(BgCircle1, 90)
 
-local BgCircle2 = Instance.new("Frame", Main)
-BgCircle2.Size = UDim2.new(0, 150, 0, 150)
-BgCircle2.Position = UDim2.new(0.7, 0, 0.1, 0)
+local BgCircle2 = Instance.new("Frame", ClipFrame)
+BgCircle2.Size = UDim2.new(0, 130, 0, 130)
+BgCircle2.Position = UDim2.new(0.75, 0, 0.05, 0)
 BgCircle2.BackgroundColor3 = Color3.fromRGB(20, 80, 160)
 BgCircle2.BackgroundTransparency = 0.9
 BgCircle2.BorderSizePixel = 0
-makeCorner(BgCircle2, 75)
+makeCorner(BgCircle2, 65)
 
 -- Header with gradient
 local Header = Instance.new("Frame", Main)
@@ -114,6 +121,14 @@ Header.Size = UDim2.new(1, 0, 0, 50)
 Header.BackgroundColor3 = Color3.fromRGB(18, 25, 42)
 Header.BorderSizePixel = 0
 makeCorner(Header, 14)
+
+-- Add gradient to header
+local HeaderGradient = Instance.new("UIGradient", Header)
+HeaderGradient.Rotation = 90
+HeaderGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 45, 75)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 25, 42))
+}
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0)
@@ -125,7 +140,7 @@ Title.TextSize = 18
 Title.TextColor3 = Color3.fromRGB(220, 230, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Icon
+-- Icon with subtle glow
 local Icon = Instance.new("ImageLabel", Header)
 Icon.Size = UDim2.new(0, 30, 0, 30)
 Icon.Position = UDim2.new(0, 12, 0.5, -15)
@@ -133,7 +148,17 @@ Icon.BackgroundTransparency = 1
 Icon.Image = "rbxassetid://7072716642" -- Lock icon
 Icon.ImageColor3 = Color3.fromRGB(100, 170, 255)
 
--- CLOSE (X)
+-- Add glow effect to icon
+local IconGlow = Instance.new("ImageLabel", Icon)
+IconGlow.Size = UDim2.new(1.5, 0, 1.5, 0)
+IconGlow.Position = UDim2.new(-0.25, 0, -0.25, 0)
+IconGlow.Image = "rbxassetid://7072716642"
+IconGlow.ImageColor3 = Color3.fromRGB(100, 170, 255)
+IconGlow.BackgroundTransparency = 1
+IconGlow.ImageTransparency = 0.8
+IconGlow.ZIndex = -1
+
+-- CLOSE (X) with improved design
 local CloseBtn = Instance.new("TextButton", Header)
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -40, 0.5, -15)
@@ -151,7 +176,7 @@ Content.Size = UDim2.new(1, -40, 1, -90)
 Content.Position = UDim2.new(0, 20, 0, 70)
 Content.BackgroundTransparency = 1
 
--- Welcome text
+-- Welcome text with subtle animation
 local Welcome = Instance.new("TextLabel", Content)
 Welcome.Size = UDim2.new(1, 0, 0, 30)
 Welcome.Position = UDim2.new(0, 0, 0, 0)
@@ -174,13 +199,21 @@ Instructions.BackgroundTransparency = 1
 Instructions.TextXAlignment = Enum.TextXAlignment.Left
 Instructions.TextWrapped = true
 
--- Key input field
+-- Key input field with improved design
 local KeyBoxFrame = Instance.new("Frame", Content)
 KeyBoxFrame.Size = UDim2.new(1, 0, 0, 50)
 KeyBoxFrame.Position = UDim2.new(0, 0, 0, 85)
 KeyBoxFrame.BackgroundColor3 = Color3.fromRGB(22, 30, 48)
 makeCorner(KeyBoxFrame, 8)
 makeStroke(KeyBoxFrame, Color3.fromRGB(60, 110, 190))
+
+-- Add gradient to input field
+local InputGradient = Instance.new("UIGradient", KeyBoxFrame)
+InputGradient.Rotation = 90
+InputGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 40, 65)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 30, 48))
+}
 
 local KeyBox = Instance.new("TextBox", KeyBoxFrame)
 KeyBox.Size = UDim2.new(1, -20, 1, -10)
@@ -193,7 +226,7 @@ KeyBox.TextColor3 = Color3.fromRGB(220, 230, 255)
 KeyBox.BackgroundTransparency = 1
 KeyBox.ClearTextOnFocus = false
 
--- Verify button
+-- Verify button with improved design
 local VerifyBtn = Instance.new("TextButton", Content)
 VerifyBtn.Size = UDim2.new(1, 0, 0, 45)
 VerifyBtn.Position = UDim2.new(0, 0, 1, -55)
@@ -205,6 +238,14 @@ VerifyBtn.BackgroundColor3 = Color3.fromRGB(50, 110, 220)
 makeCorner(VerifyBtn, 8)
 makeStroke(VerifyBtn, Color3.fromRGB(100, 160, 255))
 
+-- Add gradient to verify button
+local ButtonGradient = Instance.new("UIGradient", VerifyBtn)
+ButtonGradient.Rotation = 90
+ButtonGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 130, 240)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 110, 220))
+}
+
 -- Footer text
 local Footer = Instance.new("TextLabel", Main)
 Footer.Size = UDim2.new(1, 0, 0, 20)
@@ -215,19 +256,19 @@ Footer.Font = Enum.Font.Gotham
 Footer.TextSize = 12
 Footer.BackgroundTransparency = 1
 
--- Hover effects
+-- Hover effects with improved animation
 local function setupHoverEffect(button, normalColor, hoverColor, normalStroke, hoverStroke)
     button.MouseEnter:Connect(function()
-        tween(button, 0.2, {BackgroundColor3 = hoverColor})
+        tween(button, 0.2, {BackgroundColor3 = hoverColor, Position = button.Position - UDim2.new(0, 0, 0.01, 0)})
         if hoverStroke then
-            tween(button.UIStroke, 0.2, {Color = hoverStroke})
+            tween(button.UIStroke, 0.2, {Color = hoverStroke, Thickness = 1.8})
         end
     end)
     
     button.MouseLeave:Connect(function()
-        tween(button, 0.2, {BackgroundColor3 = normalColor})
+        tween(button, 0.2, {BackgroundColor3 = normalColor, Position = button.Position + UDim2.new(0, 0, 0.01, 0)})
         if normalStroke then
-            tween(button.UIStroke, 0.2, {Color = normalStroke})
+            tween(button.UIStroke, 0.2, {Color = normalStroke, Thickness = 1.2})
         end
     end)
 end
@@ -237,14 +278,31 @@ setupHoverEffect(VerifyBtn, Color3.fromRGB(50, 110, 220), Color3.fromRGB(70, 130
 setupHoverEffect(CloseBtn, Color3.fromRGB(40, 50, 75), Color3.fromRGB(60, 70, 95),
                  Color3.fromRGB(80, 120, 200), Color3.fromRGB(100, 140, 220))
 
--- TOAST NOTIFICATION
+-- Input field hover effect
+KeyBoxFrame.MouseEnter:Connect(function()
+    tween(KeyBoxFrame.UIStroke, 0.2, {Color = Color3.fromRGB(80, 150, 220), Thickness = 1.8})
+end)
+
+KeyBoxFrame.MouseLeave:Connect(function()
+    tween(KeyBoxFrame.UIStroke, 0.2, {Color = Color3.fromRGB(60, 110, 190), Thickness = 1.2})
+end)
+
+-- TOAST NOTIFICATION with improved design
 local function toast(msg, ok)
     local holder = Instance.new("Frame", ScreenGui)
-    holder.Size = UDim2.new(0, 300, 0, 40)
-    holder.Position = UDim2.new(0.5, -150, 1, 40)
+    holder.Size = UDim2.new(0, 320, 0, 45)
+    holder.Position = UDim2.new(0.5, -160, 1, 40)
     holder.BackgroundColor3 = ok and Color3.fromRGB(20, 60, 30) or Color3.fromRGB(60, 30, 30)
     makeCorner(holder, 8)
     makeStroke(holder, ok and Color3.fromRGB(40, 160, 70) or Color3.fromRGB(180, 60, 60))
+    
+    -- Add gradient to toast
+    local ToastGradient = Instance.new("UIGradient", holder)
+    ToastGradient.Rotation = 90
+    ToastGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, ok and Color3.fromRGB(25, 70, 35) or Color3.fromRGB(70, 35, 35)),
+        ColorSequenceKeypoint.new(1, ok and Color3.fromRGB(20, 60, 30) or Color3.fromRGB(60, 30, 30))
+    }
     
     local message = Instance.new("TextLabel", holder)
     message.Size = UDim2.new(1, 0, 1, 0)
@@ -256,23 +314,23 @@ local function toast(msg, ok)
     
     local icon = Instance.new("ImageLabel", holder)
     icon.Size = UDim2.new(0, 20, 0, 20)
-    icon.Position = UDim2.new(0, 10, 0.5, -10)
+    icon.Position = UDim2.new(0, 15, 0.5, -10)
     icon.BackgroundTransparency = 1
     icon.Image = ok and "rbxassetid://7072717770" or "rbxassetid://7072717852" -- Check/cross icons
     icon.ImageColor3 = message.TextColor3
     
-    message.Position = UDim2.new(0, 35, 0, 0)
-    message.Size = UDim2.new(1, -40, 1, 0)
+    message.Position = UDim2.new(0, 45, 0, 0)
+    message.Size = UDim2.new(1, -55, 1, 0)
     
-    tween(holder, 0.3, {Position = UDim2.new(0.5, -150, 1, -60)})
+    tween(holder, 0.3, {Position = UDim2.new(0.5, -160, 1, -60)})
     task.delay(2.5, function()
-        tween(holder, 0.3, {Position = UDim2.new(0.5, -150, 1, 40)})
+        tween(holder, 0.3, {Position = UDim2.new(0.5, -160, 1, 40)})
         task.wait(0.35)
         holder:Destroy()
     end)
 end
 
--- DRAGGABLE UI
+-- DRAGGABLE UI with improved shadow effect
 do
     local dragging, dragInput, startPos, dragStart
     Header.InputBegan:Connect(function(input)
@@ -280,7 +338,7 @@ do
             dragging = true
             dragStart = input.Position
             startPos = Main.Position
-            tween(Shadow, 0.1, {Position = startPos + UDim2.new(0, 3, 0, 3)})
+            tween(Shadow, 0.1, {Position = startPos + UDim2.new(0, 4, 0, 4), BackgroundTransparency = 0.7})
         end
     end)
     
@@ -294,19 +352,19 @@ do
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
             Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            Shadow.Position = Main.Position + UDim2.new(0, 3, 0, 3)
+            Shadow.Position = Main.Position + UDim2.new(0, 4, 0, 4)
         end
     end)
     
     Header.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
-            tween(Shadow, 0.2, {Position = Main.Position})
+            tween(Shadow, 0.2, {Position = Main.Position, BackgroundTransparency = 0.8})
         end
     end)
 end
 
--- CONFIRM EXIT POPUP
+-- CONFIRM EXIT POPUP with improved design
 local function confirmExit()
     local PopupOverlay = Instance.new("Frame", ScreenGui)
     PopupOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -314,13 +372,30 @@ local function confirmExit()
     PopupOverlay.BackgroundTransparency = 0.5
     PopupOverlay.ZIndex = 10
     
+    local PopupShadow = Instance.new("Frame", PopupOverlay)
+    PopupShadow.Size = UDim2.new(0, 320, 0, 180)
+    PopupShadow.Position = UDim2.new(0.5, -160, 0.5, -90)
+    PopupShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    PopupShadow.BackgroundTransparency = 0.8
+    PopupShadow.BorderSizePixel = 0
+    PopupShadow.ZIndex = 11
+    makeCorner(PopupShadow, 12)
+    
     local Popup = Instance.new("Frame", PopupOverlay)
-    Popup.Size = UDim2.new(0, 300, 0, 160)
-    Popup.Position = UDim2.new(0.5, -150, 0.5, -80)
+    Popup.Size = UDim2.new(0, 320, 0, 180)
+    Popup.Position = UDim2.new(0.5, -160, 0.5, -90)
     Popup.BackgroundColor3 = Color3.fromRGB(20, 25, 40)
-    Popup.ZIndex = 11
+    Popup.ZIndex = 12
     makeCorner(Popup, 12)
     makeStroke(Popup, Color3.fromRGB(60, 110, 200), 2)
+    
+    -- Add gradient to popup
+    local PopupGradient = Instance.new("UIGradient", Popup)
+    PopupGradient.Rotation = 90
+    PopupGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 35, 55)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 25, 40))
+    }
     
     local Title = Instance.new("TextLabel", Popup)
     Title.Size = UDim2.new(1, -20, 0, 40)
@@ -330,10 +405,10 @@ local function confirmExit()
     Title.TextSize = 18
     Title.TextColor3 = Color3.fromRGB(220, 230, 255)
     Title.BackgroundTransparency = 1
-    Title.ZIndex = 12
+    Title.ZIndex = 13
     
     local Message = Instance.new("TextLabel", Popup)
-    Message.Size = UDim2.new(1, -20, 0, 50)
+    Message.Size = UDim2.new(1, -20, 0, 60)
     Message.Position = UDim2.new(0, 10, 0, 40)
     Message.Text = "Are you sure you want to close the key system?"
     Message.Font = Enum.Font.Gotham
@@ -341,13 +416,13 @@ local function confirmExit()
     Message.TextColor3 = Color3.fromRGB(170, 190, 220)
     Message.BackgroundTransparency = 1
     Message.TextWrapped = true
-    Message.ZIndex = 12
+    Message.ZIndex = 13
     
     local ButtonContainer = Instance.new("Frame", Popup)
     ButtonContainer.Size = UDim2.new(1, -20, 0, 40)
     ButtonContainer.Position = UDim2.new(0, 10, 1, -50)
     ButtonContainer.BackgroundTransparency = 1
-    ButtonContainer.ZIndex = 12
+    ButtonContainer.ZIndex = 13
     
     local YesBtn = Instance.new("TextButton", ButtonContainer)
     YesBtn.Size = UDim2.new(0.45, 0, 1, 0)
@@ -359,7 +434,15 @@ local function confirmExit()
     YesBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
     makeCorner(YesBtn, 6)
     makeStroke(YesBtn, Color3.fromRGB(240, 100, 100))
-    YesBtn.ZIndex = 13
+    YesBtn.ZIndex = 14
+    
+    -- Add gradient to yes button
+    local YesGradient = Instance.new("UIGradient", YesBtn)
+    YesGradient.Rotation = 90
+    YesGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(220, 80, 80)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 60, 60))
+    }
     
     local NoBtn = Instance.new("TextButton", ButtonContainer)
     NoBtn.Size = UDim2.new(0.45, 0, 1, 0)
@@ -371,7 +454,15 @@ local function confirmExit()
     NoBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
     makeCorner(NoBtn, 6)
     makeStroke(NoBtn, Color3.fromRGB(100, 160, 255))
-    NoBtn.ZIndex = 13
+    NoBtn.ZIndex = 14
+    
+    -- Add gradient to no button
+    local NoGradient = Instance.new("UIGradient", NoBtn)
+    NoGradient.Rotation = 90
+    NoGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 140, 220)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 120, 200))
+    }
     
     setupHoverEffect(YesBtn, Color3.fromRGB(200, 60, 60), Color3.fromRGB(220, 80, 80),
                     Color3.fromRGB(240, 100, 100), Color3.fromRGB(255, 120, 120))
@@ -399,7 +490,7 @@ local function isValidKey(k)
     return false
 end
 
--- VERIFY BUTTON FUNCTION
+-- VERIFY BUTTON FUNCTION with improved loading animation
 VerifyBtn.MouseButton1Click:Connect(function()
     local key = trim(KeyBox.Text)
     if key == "" then 
@@ -412,16 +503,40 @@ VerifyBtn.MouseButton1Click:Connect(function()
     VerifyBtn.AutoButtonColor = false
     tween(VerifyBtn, 0.2, {BackgroundColor3 = Color3.fromRGB(80, 100, 160)})
     
+    -- Create loading animation
+    local loadingCircle = Instance.new("Frame", VerifyBtn)
+    loadingCircle.Size = UDim2.new(0, 20, 0, 20)
+    loadingCircle.Position = UDim2.new(0.5, -10, 0.5, -10)
+    loadingCircle.BackgroundTransparency = 1
+    loadingCircle.BorderSizePixel = 0
+    makeCorner(loadingCircle, 10)
+    
+    local loadingStroke = Instance.new("UIStroke", loadingCircle)
+    loadingStroke.Thickness = 2
+    loadingStroke.Color = Color3.fromRGB(200, 220, 255)
+    loadingStroke.Transparency = 0.3
+    
+    local rotation = 0
+    local connection
+    connection = RunService.RenderStepped:Connect(function(delta)
+        rotation = (rotation + delta * 360) % 360
+        loadingStroke.Rotation = rotation
+    end)
+    
     -- Simulate network delay
     task.wait(0.5)
     
     if isValidKey(key) then
+        connection:Disconnect()
+        loadingCircle:Destroy()
         toast("Key verified successfully! Loading menu...", true)
         task.wait(1)
         ScreenGui:Destroy()
         blur:Destroy()
         loadstring(game:HttpGet(MenuLoadURL))()
     else
+        connection:Disconnect()
+        loadingCircle:Destroy()
         toast("Invalid key. Please check and try again.", false)
         -- Reset button state
         VerifyBtn.Text = "VERIFY KEY"
@@ -430,7 +545,7 @@ VerifyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Initial animation
+-- Initial animation with improved entrance
 Main.Position = UDim2.new(0.5, -225, 0.3, -160)
 Shadow.Position = UDim2.new(0.5, -222, 0.3, -157)
 Main.BackgroundTransparency = 1
@@ -439,14 +554,24 @@ Shadow.BackgroundTransparency = 1
 tween(Main, 0.5, {Position = UDim2.new(0.5, -225, 0.5, -160), BackgroundTransparency = 0})
 tween(Shadow, 0.5, {Position = UDim2.new(0.5, -222, 0.5, -157), BackgroundTransparency = 0.8})
 
--- Subtle background animation
+-- Subtle background animation (contained within frame)
 spawn(function()
     while ScreenGui.Parent do
-        tween(BgCircle1, 4, {Position = UDim2.new(0.1, 0, 0.65, 0)})
-        tween(BgCircle2, 4, {Position = UDim2.new(0.65, 0, 0.1, 0)})
-        task.wait(4)
-        tween(BgCircle1, 4, {Position = UDim2.new(0.15, 0, 0.7, 0)})
-        tween(BgCircle2, 4, {Position = UDim2.new(0.7, 0, 0.15, 0)})
-        task.wait(4)
+        tween(BgCircle1, 5, {Position = UDim2.new(0.05, 0, 0.65, 0)})
+        tween(BgCircle2, 5, {Position = UDim2.new(0.7, 0, 0.1, 0)})
+        task.wait(5)
+        tween(BgCircle1, 5, {Position = UDim2.new(0.1, 0, 0.7, 0)})
+        tween(BgCircle2, 5, {Position = UDim2.new(0.75, 0, 0.05, 0)})
+        task.wait(5)
+    end
+end)
+
+-- Add subtle pulse effect to icon
+spawn(function()
+    while ScreenGui.Parent do
+        tween(IconGlow, 1.5, {ImageTransparency = 0.9})
+        task.wait(1.5)
+        tween(IconGlow, 1.5, {ImageTransparency = 0.7})
+        task.wait(1.5)
     end
 end)
