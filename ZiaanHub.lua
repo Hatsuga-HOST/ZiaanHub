@@ -3,7 +3,7 @@
 -- Pure custom UI (no external libs). Theme: Ocean Dark Blue.
 -- CONFIG:
 local KeyLink = "https://pastebin.com/raw/3vaUdQ30"             -- RAW file: tiap baris 1 key
-local MenuURL = "https://raw.githubusercontent.com/MajestySkie/list/refs/heads/main/games"    -- URL script utama yang akan di-load jika key valid
+local MenuURL = "https://raw.githubusercontent.com/MajestySkie/Zombie-Killer/refs/heads/main/Chx.lua"    -- URL script utama yang akan di-load jika key valid
 local LogoId  = "rbxassetid://134650706258031"                      -- Roblox image id untuk logo melengkung
 local SaveKey = true                                            -- Simpan key lokal (butuh writefile/readfile)
 local KeyFile = "ZiaanHub_Key.txt"                              -- nama file jika SaveKey=true
