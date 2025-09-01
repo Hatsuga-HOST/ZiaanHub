@@ -1,6 +1,3 @@
--- ZiaanHub Key System (Premium Glass UI)
--- By ZiaanStore Ã‚Â© 2025
--- Compact Glassmorphism Theme
 
 -- CONFIG
 local KeyLink = "https://pastebin.com/raw/3vaUdQ30"
@@ -305,7 +302,7 @@ ButtonGradient.Color = ColorSequence.new{
 local Footer = Instance.new("TextLabel", Main)
 Footer.Size = UDim2.new(1, 0, 0, 20) -- Reduced height
 Footer.Position = UDim2.new(0, 0, 1, -25) -- Position adjusted
-Footer.Text = "ZiaanStore Ã‚Â© 2025 | Edition v2.1"
+Footer.Text = "ZiaanStore © 2025 | Edition v2.1"
 Footer.TextColor3 = Color3.fromRGB(120, 150, 200)
 Footer.Font = Enum.Font.Gotham
 Footer.TextSize = 12 -- Smaller
