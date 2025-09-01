@@ -1,4 +1,3 @@
-
 -- CONFIG
 local KeyLink = "https://pastebin.com/raw/3vaUdQ30"
 local MenuLoadURL = "https://raw.githubusercontent.com/MajestySkie/list/refs/heads/main/games"
@@ -12,6 +11,7 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
 
 -- HELPERS
 local function tween(obj, time, props, easingStyle, easingDirection)
@@ -175,6 +175,18 @@ Icon.BackgroundTransparency = 1
 Icon.Image = "rbxassetid://97279435030809" -- Lock icon
 Icon.ImageColor3 = Color3.fromRGB(120, 190, 255)
 Icon.ZIndex = 3
+
+-- Add glow effect to icon
+local IconGlow = Instance.new("ImageLabel", Icon)
+IconGlow.Size = UDim2.new(1.5, 0, 1.5, 0)
+IconGlow.Position = UDim2.new(-0.25, 0, -0.25, 0)
+IconGlow.Image = "rbxassetid://4996894000"
+IconGlow.ImageColor3 = Color3.fromRGB(100, 170, 255)
+IconGlow.BackgroundTransparency = 1
+IconGlow.ScaleType = Enum.ScaleType.Slice
+IconGlow.SliceCenter = Rect.new(49, 49, 51, 51)
+IconGlow.ImageTransparency = 0.8
+IconGlow.ZIndex = 2
 
 -- CLOSE (X) with improved design
 local CloseBtn = Instance.new("TextButton", Header)
