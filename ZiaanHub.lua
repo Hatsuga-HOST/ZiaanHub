@@ -1,6 +1,6 @@
 -- ZiaanHub Key System (Premium Glass UI)
 -- By ZiaanStore © 2025
--- Enhanced Glassmorphism Theme with Advanced Animations
+-- Compact Glassmorphism Theme
 
 -- CONFIG
 local KeyLink = "https://pastebin.com/raw/3vaUdQ30"
@@ -72,7 +72,7 @@ tween(blur, 0.5, {Size = 20})
 -- Background overlay with gradient
 local Overlay = Instance.new("Frame", ScreenGui)
 Overlay.Size = UDim2.new(1, 0, 1, 0)
-Overlay.BackgroundColor3 = Color3.fromRGB(8, 15, 28)
+Overlay.BackgroundColor3 = Color3.fromRGB(15, 25, 45) -- Dark blue instead of black
 Overlay.BackgroundTransparency = 0.1
 Overlay.BorderSizePixel = 0
 
@@ -116,10 +116,10 @@ spawn(function()
     end
 end)
 
--- Main container with glassmorphism effect
+-- Main container with glassmorphism effect - More compact size
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 500, 0, 420)
-Main.Position = UDim2.new(0.5, -250, 0.5, -210)
+Main.Size = UDim2.new(0, 450, 0, 350) -- More compact
+Main.Position = UDim2.new(0.5, -225, 0.5, -175)
 Main.BackgroundColor3 = Color3.fromRGB(20, 30, 50)
 Main.BackgroundTransparency = 0.2
 Main.BorderSizePixel = 0
@@ -143,28 +143,9 @@ ClipFrame.BackgroundTransparency = 1
 ClipFrame.ClipsDescendants = true
 ClipFrame.ZIndex = 1
 
--- Animated background elements (contained within the frame)
-local BgCircle1 = Instance.new("Frame", ClipFrame)
-BgCircle1.Size = UDim2.new(0, 200, 0, 200)
-BgCircle1.Position = UDim2.new(0.05, 0, 0.7, 0)
-BgCircle1.BackgroundColor3 = Color3.fromRGB(40, 80, 160)
-BgCircle1.BackgroundTransparency = 0.9
-BgCircle1.BorderSizePixel = 0
-BgCircle1.ZIndex = 1
-makeCorner(BgCircle1, 100)
-
-local BgCircle2 = Instance.new("Frame", ClipFrame)
-BgCircle2.Size = UDim2.new(0, 150, 0, 150)
-BgCircle2.Position = UDim2.new(0.75, 0, 0.05, 0)
-BgCircle2.BackgroundColor3 = Color3.fromRGB(30, 100, 200)
-BgCircle2.BackgroundTransparency = 0.9
-BgCircle2.BorderSizePixel = 0
-BgCircle2.ZIndex = 1
-makeCorner(BgCircle2, 75)
-
--- Header with gradient
+-- Header with gradient - More compact
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 70)
+Header.Size = UDim2.new(1, 0, 0, 60) -- Reduced height
 Header.BackgroundColor3 = Color3.fromRGB(25, 35, 60)
 Header.BorderSizePixel = 0
 Header.ZIndex = 3
@@ -184,29 +165,19 @@ Title.Position = UDim2.new(0, 60, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
 Title.Text = "ZIAANHUB PREMIUM ACCESS"
-Title.TextSize = 22
+Title.TextSize = 20 -- Slightly smaller
 Title.TextColor3 = Color3.fromRGB(230, 240, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.ZIndex = 3
 
 -- Icon with subtle glow
 local Icon = Instance.new("ImageLabel", Header)
-Icon.Size = UDim2.new(0, 40, 0, 40)
-Icon.Position = UDim2.new(0, 15, 0.5, -20)
+Icon.Size = UDim2.new(0, 36, 0, 36) -- Slightly smaller
+Icon.Position = UDim2.new(0, 15, 0.5, -18)
 Icon.BackgroundTransparency = 1
 Icon.Image = "rbxassetid://7072716642" -- Lock icon
 Icon.ImageColor3 = Color3.fromRGB(120, 190, 255)
 Icon.ZIndex = 3
-
--- Add glow effect to icon
-local IconGlow = Instance.new("ImageLabel", Icon)
-IconGlow.Size = UDim2.new(1.8, 0, 1.8, 0)
-IconGlow.Position = UDim2.new(-0.4, 0, -0.4, 0)
-IconGlow.Image = "rbxassetid://7072716642"
-IconGlow.ImageColor3 = Color3.fromRGB(120, 190, 255)
-IconGlow.BackgroundTransparency = 1
-IconGlow.ImageTransparency = 0.8
-IconGlow.ZIndex = 2
 
 -- CLOSE (X) with improved design
 local CloseBtn = Instance.new("TextButton", Header)
@@ -221,33 +192,33 @@ CloseBtn.ZIndex = 3
 makeCorner(CloseBtn, 8)
 makeStroke(CloseBtn, Color3.fromRGB(100, 150, 220))
 
--- Body content
+-- Body content - More compact spacing
 local Content = Instance.new("Frame", Main)
-Content.Size = UDim2.new(1, -40, 1, -100)
-Content.Position = UDim2.new(0, 20, 0, 80)
+Content.Size = UDim2.new(1, -30, 1, -80) -- Less padding
+Content.Position = UDim2.new(0, 15, 0, 70) -- Moved up
 Content.BackgroundTransparency = 1
 Content.ZIndex = 3
 
 -- Welcome text with subtle animation
 local Welcome = Instance.new("TextLabel", Content)
-Welcome.Size = UDim2.new(1, 0, 0, 36)
+Welcome.Size = UDim2.new(1, 0, 0, 30) -- Reduced height
 Welcome.Position = UDim2.new(0, 0, 0, 0)
 Welcome.Text = "Welcome to ZiaanHub Premium"
 Welcome.TextColor3 = Color3.fromRGB(200, 220, 255)
 Welcome.Font = Enum.Font.GothamSemibold
-Welcome.TextSize = 22
+Welcome.TextSize = 20 -- Slightly smaller
 Welcome.BackgroundTransparency = 1
 Welcome.TextXAlignment = Enum.TextXAlignment.Left
 Welcome.ZIndex = 3
 
--- Instructions
+-- Instructions - More compact
 local Instructions = Instance.new("TextLabel", Content)
-Instructions.Size = UDim2.new(1, 0, 0, 45)
-Instructions.Position = UDim2.new(0, 0, 0, 36)
-Instructions.Text = "Enter your premium key below to access exclusive features. Contact support if you need assistance."
+Instructions.Size = UDim2.new(1, 0, 0, 40) -- Reduced height
+Instructions.Position = UDim2.new(0, 0, 0, 30) -- Less spacing
+Instructions.Text = "Enter your premium key to access exclusive features."
 Instructions.TextColor3 = Color3.fromRGB(160, 180, 220)
 Instructions.Font = Enum.Font.Gotham
-Instructions.TextSize = 15
+Instructions.TextSize = 14 -- Slightly smaller
 Instructions.BackgroundTransparency = 1
 Instructions.TextXAlignment = Enum.TextXAlignment.Left
 Instructions.TextWrapped = true
@@ -255,8 +226,8 @@ Instructions.ZIndex = 3
 
 -- Key input field with improved design
 local KeyBoxFrame = Instance.new("Frame", Content)
-KeyBoxFrame.Size = UDim2.new(1, 0, 0, 55)
-KeyBoxFrame.Position = UDim2.new(0, 0, 0, 95)
+KeyBoxFrame.Size = UDim2.new(1, 0, 0, 50) -- Reduced height
+KeyBoxFrame.Position = UDim2.new(0, 0, 0, 75) -- Less spacing
 KeyBoxFrame.BackgroundColor3 = Color3.fromRGB(30, 40, 65)
 KeyBoxFrame.ZIndex = 3
 makeCorner(KeyBoxFrame, 10)
@@ -276,7 +247,7 @@ KeyBox.Position = UDim2.new(0, 10, 0, 5)
 KeyBox.PlaceholderText = "Enter your premium access key..."
 KeyBox.Text = ""
 KeyBox.Font = Enum.Font.Gotham
-KeyBox.TextSize = 17
+KeyBox.TextSize = 16 -- Slightly smaller
 KeyBox.TextColor3 = Color3.fromRGB(230, 240, 255)
 KeyBox.BackgroundTransparency = 1
 KeyBox.ClearTextOnFocus = false
@@ -309,13 +280,13 @@ ShowKeyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Verify button with improved design
+-- Verify button with improved design - Positioned closer to key input
 local VerifyBtn = Instance.new("TextButton", Content)
-VerifyBtn.Size = UDim2.new(1, 0, 0, 50)
-VerifyBtn.Position = UDim2.new(0, 0, 1, -60)
+VerifyBtn.Size = UDim2.new(1, 0, 0, 45) -- Reduced height
+VerifyBtn.Position = UDim2.new(0, 0, 0, 135) -- Positioned closer to key input
 VerifyBtn.Text = "VERIFY KEY"
 VerifyBtn.Font = Enum.Font.GothamBold
-VerifyBtn.TextSize = 18
+VerifyBtn.TextSize = 17 -- Slightly smaller
 VerifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 VerifyBtn.BackgroundColor3 = Color3.fromRGB(60, 130, 240)
 VerifyBtn.ZIndex = 3
@@ -330,22 +301,14 @@ ButtonGradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 130, 240))
 }
 
--- Status indicator
-local StatusIndicator = Instance.new("Frame", Content)
-StatusIndicator.Size = UDim2.new(1, 0, 0, 6)
-StatusIndicator.Position = UDim2.new(0, 0, 1, -70)
-StatusIndicator.BackgroundColor3 = Color3.fromRGB(60, 130, 240)
-StatusIndicator.ZIndex = 3
-makeCorner(StatusIndicator, 3)
-
 -- Footer text
 local Footer = Instance.new("TextLabel", Main)
-Footer.Size = UDim2.new(1, 0, 0, 24)
-Footer.Position = UDim2.new(0, 0, 1, -30)
+Footer.Size = UDim2.new(1, 0, 0, 20) -- Reduced height
+Footer.Position = UDim2.new(0, 0, 1, -25) -- Position adjusted
 Footer.Text = "ZiaanStore © 2025 | Premium Edition v2.1"
 Footer.TextColor3 = Color3.fromRGB(120, 150, 200)
 Footer.Font = Enum.Font.Gotham
-Footer.TextSize = 13
+Footer.TextSize = 12 -- Smaller
 Footer.BackgroundTransparency = 1
 Footer.ZIndex = 3
 
@@ -446,7 +409,7 @@ do
             startPos = Main.Position
             
             -- Add slight scale effect when dragging
-            tween(Main, 0.1, {Size = UDim2.new(0, 495, 0, 415)})
+            tween(Main, 0.1, {Size = UDim2.new(0, 445, 0, 345)})
         end
     end)
     
@@ -466,7 +429,7 @@ do
     Header.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
-            tween(Main, 0.1, {Size = UDim2.new(0, 500, 0, 420)})
+            tween(Main, 0.1, {Size = UDim2.new(0, 450, 0, 350)})
         end
     end)
 end
@@ -475,7 +438,7 @@ end
 local function confirmExit()
     local PopupOverlay = Instance.new("Frame", ScreenGui)
     PopupOverlay.Size = UDim2.new(1, 0, 1, 0)
-    PopupOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    PopupOverlay.BackgroundColor3 = Color3.fromRGB(15, 25, 45) -- Dark blue instead of black
     PopupOverlay.BackgroundTransparency = 0.6
     PopupOverlay.ZIndex = 10
     
@@ -607,7 +570,6 @@ VerifyBtn.MouseButton1Click:Connect(function()
     VerifyBtn.Text = "VERIFYING..."
     VerifyBtn.AutoButtonColor = false
     tween(VerifyBtn, 0.2, {BackgroundColor3 = Color3.fromRGB(90, 120, 180)})
-    tween(StatusIndicator, 0.2, {BackgroundColor3 = Color3.fromRGB(90, 120, 180)})
     
     -- Create loading animation
     local loadingCircle = Instance.new("Frame", VerifyBtn)
@@ -637,7 +599,6 @@ VerifyBtn.MouseButton1Click:Connect(function()
         connection:Disconnect()
         loadingCircle:Destroy()
         toast("Key verified successfully! Loading menu...", true)
-        tween(StatusIndicator, 0.3, {BackgroundColor3 = Color3.fromRGB(50, 200, 100)})
         task.wait(1)
         
         -- Animate success before loading menu
@@ -652,7 +613,6 @@ VerifyBtn.MouseButton1Click:Connect(function()
         connection:Disconnect()
         loadingCircle:Destroy()
         toast("Invalid key. Please check and try again.", false)
-        tween(StatusIndicator, 0.3, {BackgroundColor3 = Color3.fromRGB(200, 70, 70)})
         
         -- Reset button state
         VerifyBtn.Text = "VERIFY KEY"
@@ -674,33 +634,11 @@ VerifyBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Initial animation with improved entrance
-Main.Position = UDim2.new(0.5, -250, 0.4, -210)
+Main.Position = UDim2.new(0.5, -225, 0.4, -175)
 Main.BackgroundTransparency = 1
 Main.Size = UDim2.new(0, 10, 0, 10)
 
-tween(Main, 0.7, {Position = UDim2.new(0.5, -250, 0.5, -210), BackgroundTransparency = 0.2, Size = UDim2.new(0, 500, 0, 420)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-
--- Subtle background animation (contained within frame)
-spawn(function()
-    while ScreenGui.Parent do
-        tween(BgCircle1, 6, {Position = UDim2.new(0.05, 0, 0.65, 0)})
-        tween(BgCircle2, 6, {Position = UDim2.new(0.7, 0, 0.1, 0)})
-        task.wait(6)
-        tween(BgCircle1, 6, {Position = UDim2.new(0.1, 0, 0.7, 0)})
-        tween(BgCircle2, 6, {Position = UDim2.new(0.75, 0, 0.05, 0)})
-        task.wait(6)
-    end
-end)
-
--- Add subtle pulse effect to icon
-spawn(function()
-    while ScreenGui.Parent do
-        tween(IconGlow, 2, {ImageTransparency = 0.9})
-        task.wait(2)
-        tween(IconGlow, 2, {ImageTransparency = 0.7})
-        task.wait(2)
-    end
-end)
+tween(Main, 0.7, {Position = UDim2.new(0.5, -225, 0.5, -175), BackgroundTransparency = 0.2, Size = UDim2.new(0, 450, 0, 350)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
 -- Add keyboard shortcut for verification
 UserInput.InputBegan:Connect(function(input)
