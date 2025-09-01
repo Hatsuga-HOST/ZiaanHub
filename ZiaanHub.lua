@@ -66,59 +66,67 @@ local blur = Instance.new("BlurEffect", Lighting)
 blur.Size = 0
 tween(blur, 0.5, {Size = 20})
 
+-- Create animated background particles
+local ParticleContainer = Instance.new("Frame", ScreenGui)
+ParticleContainer.Size = UDim2.new(1, 0, 1, 0)
+ParticleContainer.BackgroundTransparency = 1
+ParticleContainer.ZIndex = 0
+
 -- Background overlay with gradient
 local Overlay = Instance.new("Frame", ScreenGui)
 Overlay.Size = UDim2.new(1, 0, 1, 0)
-Overlay.BackgroundColor3 = Color3.fromRGB(15, 25, 45) -- Dark blue instead of black
+Overlay.BackgroundColor3 = Color3.fromRGB(10, 15, 25)
 Overlay.BackgroundTransparency = 0.1
 Overlay.BorderSizePixel = 0
 
--- Create animated particles in background
-local function createParticle(parent, size, position, color, duration)
-    local particle = Instance.new("Frame", parent)
-    particle.Size = UDim2.new(0, size, 0, size)
-    particle.Position = position
-    particle.BackgroundColor3 = color
+-- Create animated particles
+local function createParticle()
+    local particle = Instance.new("Frame", ParticleContainer)
+    particle.Size = UDim2.new(0, math.random(5, 15), 0, math.random(5, 15))
+    particle.Position = UDim2.new(0, math.random(-50, workspace.CurrentCamera.ViewportSize.X + 50), 0, math.random(-50, workspace.CurrentCamera.ViewportSize.Y + 50))
+    particle.BackgroundColor3 = Color3.fromRGB(
+        math.random(70, 130),
+        math.random(130, 200),
+        math.random(200, 255)
+    )
     particle.BackgroundTransparency = 0.8
     particle.BorderSizePixel = 0
     particle.ZIndex = 0
-    makeCorner(particle, size/2)
+    makeCorner(particle, math.random(1, 10))
     
-    spawn(function()
-        local startPos = particle.Position
-        local targetPos = UDim2.new(
-            math.random(), math.random(-50, 50),
-            math.random(), math.random(-50, 50)
-        )
-        
-        tween(particle, duration, {Position = targetPos, BackgroundTransparency = 1})
-        task.wait(duration)
+    local duration = math.random(5, 10)
+    local targetPos = UDim2.new(
+        0, math.random(-50, workspace.CurrentCamera.ViewportSize.X + 50),
+        0, math.random(-50, workspace.CurrentCamera.ViewportSize.Y + 50)
+    )
+    
+    tween(particle, duration, {
+        Position = targetPos,
+        BackgroundTransparency = 1,
+        Rotation = math.random(-180, 180)
+    })
+    
+    delay(duration, function()
         particle:Destroy()
     end)
     
     return particle
 end
 
--- Create particle system
+-- Particle system
 spawn(function()
     while ScreenGui.Parent do
-        createParticle(
-            ScreenGui, 
-            math.random(5, 15), 
-            UDim2.new(math.random(), 0, math.random(), 0),
-            Color3.fromRGB(70, 130, 230),
-            math.random(3, 7)
-        )
-        task.wait(0.2)
+        createParticle()
+        wait(math.random(0.1, 0.3))
     end
 end)
 
--- Main container with glassmorphism effect - More compact size
+-- Main container with glassmorphism effect
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 450, 0, 350) -- More compact
-Main.Position = UDim2.new(0.5, -225, 0.5, -175)
-Main.BackgroundColor3 = Color3.fromRGB(20, 30, 50)
-Main.BackgroundTransparency = 0.2
+Main.Size = UDim2.new(0, 500, 0, 400)
+Main.Position = UDim2.new(0.5, -250, 0.5, -200)
+Main.BackgroundColor3 = Color3.fromRGB(20, 25, 35)
+Main.BackgroundTransparency = 0.1
 Main.BorderSizePixel = 0
 Main.ZIndex = 2
 makeCorner(Main, 16)
@@ -133,17 +141,10 @@ GlassFrame.BorderSizePixel = 0
 GlassFrame.ZIndex = 2
 makeCorner(GlassFrame, 16)
 
--- Create a clipping frame to contain the animated elements
-local ClipFrame = Instance.new("Frame", Main)
-ClipFrame.Size = UDim2.new(1, 0, 1, 0)
-ClipFrame.BackgroundTransparency = 1
-ClipFrame.ClipsDescendants = true
-ClipFrame.ZIndex = 1
-
--- Header with gradient - More compact
+-- Header with gradient
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 60) -- Reduced height
-Header.BackgroundColor3 = Color3.fromRGB(25, 35, 60)
+Header.Size = UDim2.new(1, 0, 0, 70)
+Header.BackgroundColor3 = Color3.fromRGB(25, 30, 40)
 Header.BorderSizePixel = 0
 Header.ZIndex = 3
 makeCorner(Header, 14)
@@ -152,27 +153,48 @@ makeCorner(Header, 14)
 local HeaderGradient = Instance.new("UIGradient", Header)
 HeaderGradient.Rotation = 90
 HeaderGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 55, 95)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 35, 60))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 105, 175)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 65, 135))
 }
+
+-- Add subtle pattern to header
+local Pattern = Instance.new("ImageLabel", Header)
+Pattern.Size = UDim2.new(1, 0, 1, 0)
+Pattern.Image = "rbxassetid://8992356373"
+Pattern.ImageTransparency = 0.9
+Pattern.ScaleType = Enum.ScaleType.Tile
+Pattern.TileSize = UDim2.new(0, 50, 0, 50)
+Pattern.BackgroundTransparency = 1
+Pattern.ZIndex = 3
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -80, 1, 0)
 Title.Position = UDim2.new(0, 60, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.Text = "ZIAANHUB ACCESS"
-Title.TextSize = 20 -- Slightly smaller
+Title.Text = "ZIAANHUB PREMIUM ACCESS"
+Title.TextSize = 22
 Title.TextColor3 = Color3.fromRGB(230, 240, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.ZIndex = 3
 
+local Subtitle = Instance.new("TextLabel", Header)
+Subtitle.Size = UDim2.new(1, -80, 0, 20)
+Subtitle.Position = UDim2.new(0, 60, 0, 40)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Font = Enum.Font.Gotham
+Subtitle.Text = "Exclusive Script Hub"
+Subtitle.TextSize = 14
+Subtitle.TextColor3 = Color3.fromRGB(180, 200, 230)
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+Subtitle.ZIndex = 3
+
 -- Icon with subtle glow
 local Icon = Instance.new("ImageLabel", Header)
-Icon.Size = UDim2.new(0, 36, 0, 36) -- Slightly smaller
-Icon.Position = UDim2.new(0, 15, 0.5, -18)
+Icon.Size = UDim2.new(0, 40, 0, 40)
+Icon.Position = UDim2.new(0, 15, 0.5, -20)
 Icon.BackgroundTransparency = 1
-Icon.Image = "rbxassetid://97279435030809" -- Lock icon
+Icon.Image = "rbxassetid://7072716642" -- Premium key icon
 Icon.ImageColor3 = Color3.fromRGB(120, 190, 255)
 Icon.ZIndex = 3
 
@@ -188,46 +210,56 @@ IconGlow.SliceCenter = Rect.new(49, 49, 51, 51)
 IconGlow.ImageTransparency = 0.8
 IconGlow.ZIndex = 2
 
+-- Animate icon glow
+spawn(function()
+    while IconGlow.Parent do
+        tween(IconGlow, 1.5, {ImageTransparency = 0.6})
+        wait(1.5)
+        tween(IconGlow, 1.5, {ImageTransparency = 0.8})
+        wait(1.5)
+    end
+end)
+
 -- CLOSE (X) with improved design
 local CloseBtn = Instance.new("TextButton", Header)
 CloseBtn.Size = UDim2.new(0, 32, 0, 32)
 CloseBtn.Position = UDim2.new(1, -42, 0.5, -16)
-CloseBtn.Text = "X"
+CloseBtn.Text = "×"
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 22
+CloseBtn.TextSize = 24
 CloseBtn.TextColor3 = Color3.fromRGB(220, 220, 240)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(50, 65, 100)
 CloseBtn.ZIndex = 3
 makeCorner(CloseBtn, 8)
 makeStroke(CloseBtn, Color3.fromRGB(100, 150, 220))
 
--- Body content - More compact spacing
+-- Body content
 local Content = Instance.new("Frame", Main)
-Content.Size = UDim2.new(1, -30, 1, -80) -- Less padding
-Content.Position = UDim2.new(0, 15, 0, 70) -- Moved up
+Content.Size = UDim2.new(1, -30, 1, -90)
+Content.Position = UDim2.new(0, 15, 0, 80)
 Content.BackgroundTransparency = 1
 Content.ZIndex = 3
 
 -- Welcome text with subtle animation
 local Welcome = Instance.new("TextLabel", Content)
-Welcome.Size = UDim2.new(1, 0, 0, 30) -- Reduced height
+Welcome.Size = UDim2.new(1, 0, 0, 40)
 Welcome.Position = UDim2.new(0, 0, 0, 0)
 Welcome.Text = "Welcome to ZiaanHub Premium"
 Welcome.TextColor3 = Color3.fromRGB(200, 220, 255)
 Welcome.Font = Enum.Font.GothamSemibold
-Welcome.TextSize = 20 -- Slightly smaller
+Welcome.TextSize = 22
 Welcome.BackgroundTransparency = 1
 Welcome.TextXAlignment = Enum.TextXAlignment.Left
 Welcome.ZIndex = 3
 
--- Instructions - More compact
+-- Instructions
 local Instructions = Instance.new("TextLabel", Content)
-Instructions.Size = UDim2.new(1, 0, 0, 40) -- Reduced height
-Instructions.Position = UDim2.new(0, 0, 0, 30) -- Less spacing
-Instructions.Text = "Enter your key to access exclusive features."
+Instructions.Size = UDim2.new(1, 0, 0, 50)
+Instructions.Position = UDim2.new(0, 0, 0, 40)
+Instructions.Text = "Enter your premium key below to unlock exclusive features and scripts."
 Instructions.TextColor3 = Color3.fromRGB(160, 180, 220)
 Instructions.Font = Enum.Font.Gotham
-Instructions.TextSize = 14 -- Slightly smaller
+Instructions.TextSize = 15
 Instructions.BackgroundTransparency = 1
 Instructions.TextXAlignment = Enum.TextXAlignment.Left
 Instructions.TextWrapped = true
@@ -235,9 +267,9 @@ Instructions.ZIndex = 3
 
 -- Key input field with improved design
 local KeyBoxFrame = Instance.new("Frame", Content)
-KeyBoxFrame.Size = UDim2.new(1, 0, 0, 50) -- Reduced height
-KeyBoxFrame.Position = UDim2.new(0, 0, 0, 75) -- Less spacing
-KeyBoxFrame.BackgroundColor3 = Color3.fromRGB(30, 40, 65)
+KeyBoxFrame.Size = UDim2.new(1, 0, 0, 55)
+KeyBoxFrame.Position = UDim2.new(0, 0, 0, 100)
+KeyBoxFrame.BackgroundColor3 = Color3.fromRGB(30, 35, 45)
 KeyBoxFrame.ZIndex = 3
 makeCorner(KeyBoxFrame, 10)
 makeStroke(KeyBoxFrame, Color3.fromRGB(80, 140, 220))
@@ -246,17 +278,17 @@ makeStroke(KeyBoxFrame, Color3.fromRGB(80, 140, 220))
 local InputGradient = Instance.new("UIGradient", KeyBoxFrame)
 InputGradient.Rotation = 90
 InputGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 50, 80)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 40, 65))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 45, 60)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 35, 45))
 }
 
 local KeyBox = Instance.new("TextBox", KeyBoxFrame)
 KeyBox.Size = UDim2.new(1, -20, 1, -10)
 KeyBox.Position = UDim2.new(0, 10, 0, 5)
-KeyBox.PlaceholderText = "Enter your access key..."
+KeyBox.PlaceholderText = "Enter your premium access key..."
 KeyBox.Text = ""
 KeyBox.Font = Enum.Font.Gotham
-KeyBox.TextSize = 16 -- Slightly smaller
+KeyBox.TextSize = 17
 KeyBox.TextColor3 = Color3.fromRGB(230, 240, 255)
 KeyBox.BackgroundTransparency = 1
 KeyBox.ClearTextOnFocus = false
@@ -289,13 +321,13 @@ ShowKeyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Verify button with improved design - Positioned closer to key input
+-- Verify button with improved design
 local VerifyBtn = Instance.new("TextButton", Content)
-VerifyBtn.Size = UDim2.new(1, 0, 0, 45) -- Reduced height
-VerifyBtn.Position = UDim2.new(0, 0, 0, 135) -- Positioned closer to key input
+VerifyBtn.Size = UDim2.new(1, 0, 0, 50)
+VerifyBtn.Position = UDim2.new(0, 0, 0, 170)
 VerifyBtn.Text = "VERIFY KEY"
 VerifyBtn.Font = Enum.Font.GothamBold
-VerifyBtn.TextSize = 17 -- Slightly smaller
+VerifyBtn.TextSize = 18
 VerifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 VerifyBtn.BackgroundColor3 = Color3.fromRGB(60, 130, 240)
 VerifyBtn.ZIndex = 3
@@ -310,14 +342,34 @@ ButtonGradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 130, 240))
 }
 
+-- Add shine effect to button
+local ButtonShine = Instance.new("Frame", VerifyBtn)
+ButtonShine.Size = UDim2.new(0, 50, 2, 0)
+ButtonShine.Position = UDim2.new(-0.2, 0, -0.5, 0)
+ButtonShine.Rotation = 30
+ButtonShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ButtonShine.BackgroundTransparency = 0.8
+ButtonShine.BorderSizePixel = 0
+ButtonShine.ZIndex = 4
+makeCorner(ButtonShine, 5)
+
+-- Animate the shine effect
+spawn(function()
+    while ButtonShine.Parent do
+        tween(ButtonShine, 0, {Position = UDim2.new(-0.2, 0, -0.5, 0)})
+        tween(ButtonShine, 1.5, {Position = UDim2.new(1.2, 0, -0.5, 0)})
+        wait(2)
+    end
+end)
+
 -- Footer text
 local Footer = Instance.new("TextLabel", Main)
-Footer.Size = UDim2.new(1, 0, 0, 20) -- Reduced height
-Footer.Position = UDim2.new(0, 0, 1, -25) -- Position adjusted
-Footer.Text = "ZiaanStore © 2025 | Edition v2.1"
+Footer.Size = UDim2.new(1, 0, 0, 30)
+Footer.Position = UDim2.new(0, 0, 1, -35)
+Footer.Text = "ZiaanStore © 2025 | Premium Edition v2.1"
 Footer.TextColor3 = Color3.fromRGB(120, 150, 200)
 Footer.Font = Enum.Font.Gotham
-Footer.TextSize = 12 -- Smaller
+Footer.TextSize = 13
 Footer.BackgroundTransparency = 1
 Footer.ZIndex = 3
 
@@ -418,7 +470,7 @@ do
             startPos = Main.Position
             
             -- Add slight scale effect when dragging
-            tween(Main, 0.1, {Size = UDim2.new(0, 445, 0, 345)})
+            tween(Main, 0.1, {Size = UDim2.new(0, 495, 0, 395)})
         end
     end)
     
@@ -438,7 +490,7 @@ do
     Header.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
-            tween(Main, 0.1, {Size = UDim2.new(0, 450, 0, 350)})
+            tween(Main, 0.1, {Size = UDim2.new(0, 500, 0, 400)})
         end
     end)
 end
@@ -447,14 +499,14 @@ end
 local function confirmExit()
     local PopupOverlay = Instance.new("Frame", ScreenGui)
     PopupOverlay.Size = UDim2.new(1, 0, 1, 0)
-    PopupOverlay.BackgroundColor3 = Color3.fromRGB(15, 25, 45) -- Dark blue instead of black
+    PopupOverlay.BackgroundColor3 = Color3.fromRGB(10, 15, 25)
     PopupOverlay.BackgroundTransparency = 0.6
     PopupOverlay.ZIndex = 10
     
     local Popup = Instance.new("Frame", PopupOverlay)
     Popup.Size = UDim2.new(0, 340, 0, 200)
     Popup.Position = UDim2.new(0.5, -170, 0.5, -100)
-    Popup.BackgroundColor3 = Color3.fromRGB(25, 35, 60)
+    Popup.BackgroundColor3 = Color3.fromRGB(25, 30, 40)
     Popup.BackgroundTransparency = 0.1
     Popup.ZIndex = 11
     makeCorner(Popup, 14)
@@ -643,11 +695,11 @@ VerifyBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Initial animation with improved entrance
-Main.Position = UDim2.new(0.5, -225, 0.4, -175)
+Main.Position = UDim2.new(0.5, -250, 0.4, -200)
 Main.BackgroundTransparency = 1
 Main.Size = UDim2.new(0, 10, 0, 10)
 
-tween(Main, 0.7, {Position = UDim2.new(0.5, -225, 0.5, -175), BackgroundTransparency = 0.2, Size = UDim2.new(0, 450, 0, 350)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+tween(Main, 0.7, {Position = UDim2.new(0.5, -250, 0.5, -200), BackgroundTransparency = 0.1, Size = UDim2.new(0, 500, 0, 400)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
 -- Add keyboard shortcut for verification
 UserInput.InputBegan:Connect(function(input)
