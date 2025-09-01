@@ -1,142 +1,89 @@
--- ZiaanHub Key System dengan Orion Library
--- By ZiaanStore © 2025
+-- ZiaanHub Key System (Professional Dark Blue) - Orion Library (English)
 
 -- Load Orion Library
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 
--- CONFIG 
-local KeyLink = "https://pastebin.com/raw/3vaUdQ30" 
-local MenuLoadURL = "https://raw.githubusercontent.com/MajestySkie/list/refs/heads/main/games" 
+-- CONFIG
+local KeyLink = "https://pastebin.com/raw/3vaUdQ30" -- replace with your key list link
+local MenuLoadURL = "https://raw.githubusercontent.com/MajestySkie/list/refs/heads/main/games"
 
--- Fungsi untuk memotong spasi
-local function trim(s) 
-    return (s or ""):gsub("^%s+", ""):gsub("%s+$", "") 
-end 
-
--- Ambil kunci valid dari pastebin
-local ValidKeys = {}
-local function loadValidKeys()
-    local success, result = pcall(function()
+-- Function to check key
+local function checkKey(userKey)
+    local success, response = pcall(function()
         return game:HttpGet(KeyLink)
     end)
     
-    if success and result then
-        for line in result:gmatch("[^\r\n]+") do
-            local key = trim(line)
-            if #key > 0 then
-                table.insert(ValidKeys, key)
+    if success then
+        for key in response:gmatch("[^\r\n]+") do
+            if userKey == key then
+                return true
             end
         end
-        return true
+        return false
     else
+        warn("Failed to fetch key list from server.")
         return false
     end
 end
 
--- Muat kunci valid
-local keysLoaded = loadValidKeys()
-
--- Fungsi validasi kunci
-local function isValidKey(inputKey)
-    inputKey = trim(inputKey or "")
-    for _, validKey in ipairs(ValidKeys) do
-        if inputKey == validKey then
-            return true
-        end
-    end
-    return false
-end
-
--- Buat window Orion
+-- Create Orion Window with Professional Dark Blue Theme
 local Window = OrionLib:MakeWindow({
-    Name = "ZIAANHUB ACCESS",
+    Name = "ZiaanHub",
     HidePremium = false,
-    SaveConfig = false,
-    IntroEnabled = false,
-    ConfigFolder = "ZiaanHub"
+    SaveConfig = true,
+    IntroText = "Welcome to ZiaanHub.\nPlease enter your key to access the main menu.",
+    MainColor = Color3.fromRGB(10, 25, 80),  -- Dark Blue
+    MinimizeIcon = "rbxassetid://6031094674",
+    IntroIcon = "rbxassetid://4483345998",
 })
 
--- Buat tab utama
-local MainTab = Window:MakeTab({
-    Name = "Key System",
-    Icon = "rbxassetid://7072716642",
+-- Key Input Tab
+local Tab = Window:MakeTab({
+    Name = "Key Login",
+    Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
--- Header
-MainTab:AddParagraph("Welcome", "Welcome to ZiaanHub Premium. Enter your key to access exclusive features.")
-
-if not keysLoaded then
-    MainTab:AddParagraph("Warning", "Failed to load valid keys. Please check your connection.")
-end
-
--- Input key
-local KeyInput = MainTab:AddTextbox({
-    Name = "Access Key",
+-- Textbox for entering key
+Tab:AddTextbox({
+    Name = "Enter Key",
     Default = "",
-    TextDisappear = false,
-    Callback = function(value)
-        -- Callback untuk textbox
-    end
-})
-
--- Tombol verifikasi
-MainTab:AddButton({
-    Name = "VERIFY KEY",
-    Callback = function()
-        local key = trim(KeyInput.Value)
-        
-        if key == "" then
+    TextDisappear = true,
+    Callback = function(text)
+        local valid = checkKey(text)
+        if valid then
             OrionLib:MakeNotification({
-                Name = "Error",
-                Content = "Please enter a key",
-                Image = "rbxassetid://7072717852",
-                Time = 3
-            })
-            return
-        end
-        
-        -- Tampilkan notifikasi loading
-        OrionLib:MakeNotification({
-            Name = "Verifying",
-            Content = "Checking your key...",
-            Image = "rbxassetid://7072716642",
-            Time = 2
-        })
-        
-        -- Verifikasi kunci
-        if isValidKey(key) then
-            OrionLib:MakeNotification({
-                Name = "Success",
-                Content = "Key verified! Loading menu...",
-                Image = "rbxassetid://7072717770",
-                Time = 3
+                Name = "Key Valid",
+                Content = "Your key has been verified successfully.\nThe main menu will now load.",
+                Image = "rbxassetid://4483345998",
+                Time = 3,
+                TitleColor = Color3.fromRGB(0, 170, 255)
             })
             
-            -- Tunggu sebentar lalu tutup window dan muat menu
-            wait(2)
-            OrionLib:Destroy()
-            loadstring(game:HttpGet(MenuLoadURL))()
+            -- Load main menu from GitHub
+            local success, menuCode = pcall(function()
+                return game:HttpGet(MenuLoadURL)
+            end)
+            
+            if success then
+                loadstring(menuCode)()
+            else
+                OrionLib:MakeNotification({
+                    Name = "Error",
+                    Content = "Failed to load the main menu. Please try again.",
+                    Image = "rbxassetid://4483345998",
+                    Time = 3,
+                    TitleColor = Color3.fromRGB(255, 50, 50)
+                })
+            end
         else
             OrionLib:MakeNotification({
-                Name = "Error",
-                Content = "Invalid key. Please try again.",
-                Image = "rbxassetid://7072717852",
-                Time = 3
+                Name = "Invalid Key",
+                Content = "The key you entered was not found.\nPlease check and try again.",
+                Image = "rbxassetid://4483345998",
+                Time = 3,
+                TitleColor = Color3.fromRGB(255, 50, 50)
             })
         end
     end
 })
-
--- Footer
-MainTab:AddParagraph("Footer", "ZiaanStore © 2025 | Edition v2.1")
-
--- Inisialisasi Orion
-OrionLib:Init()
-
--- Tambahkan handler untuk tombol ESC
-game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
-    if not processed and input.KeyCode == Enum.KeyCode.Escape then
-        OrionLib:Destroy()
-    end
-end)
