@@ -1,8 +1,3 @@
-ZiaanHub Key System (Premium Glass UI) - Enhanced Version
-
-I've improved the UI with more details and visual enhancements while maintaining the glassmorphism theme. Here's the upgraded version:
-
-```lua
 -- ZiaanHub Key System (Premium Glass UI)
 -- By ZiaanStore © 2025
 -- Enhanced Glassmorphism Theme with Advanced Animations
