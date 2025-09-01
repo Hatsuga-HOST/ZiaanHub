@@ -21,7 +21,7 @@ end
 
 local ClickSound = makeSound(84270429231946, workspace)
 local SuccessSound = makeSound(118763404331701, workspace)
-local FailSound = makeSound(9118821729, workspace)
+local FailSound = makeSound(139730102703190, workspace)
 
 -- SCREEN GUI
 local ScreenGui = Instance.new("ScreenGui",Players.LocalPlayer:WaitForChild("PlayerGui"))
