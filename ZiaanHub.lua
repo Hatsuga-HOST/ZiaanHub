@@ -20,7 +20,7 @@ local function makeSound(id,parent)
 end
 
 local ClickSound = makeSound(84270429231946, workspace)
-local SuccessSound = makeSound(9118821729, workspace)
+local SuccessSound = makeSound(118763404331701, workspace)
 local FailSound = makeSound(9118821729, workspace)
 
 -- SCREEN GUI
