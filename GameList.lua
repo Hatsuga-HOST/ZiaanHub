@@ -1,5 +1,5 @@
 local games = {
-    [102234703920418] = "https://raw.githubusercontent.com/MajestySkie/DIG/refs/heads/main/DigDigDig.lua",
+    [102234703920418] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Gunung/AutoSummit/GunungDaun/utm.lua",
     [137123819476589] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Gunung/AutoSummit/GunungSakahayang/Csx.lua",
 }
 
