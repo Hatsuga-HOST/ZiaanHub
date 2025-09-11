@@ -1,6 +1,6 @@
 local Games = {
-  [86076978383613] = "https://raw.githubusercontent.com/AhmadV99/Script-Games/refs/heads/main/Hunty%20Zombie.lua",
-  [121864768012064] = "https://raw.githubusercontent.com/AhmadV99/Script-Games/refs/heads/main/Fish%20It.lua",
+  [102234703920418] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Gunung/AutoSummit/GunungDaun/utm.lua",
+  [137123819476589] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Gunung/AutoSummit/GunungSakahayang/Csx.lua",
 }
 
 return Games
