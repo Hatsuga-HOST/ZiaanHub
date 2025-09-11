@@ -1,7 +1,13 @@
-local Games = {
-  [102234703920418] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/main/Gunung/AutoSummit/GunungDaun/utm.lua", 
-  
-  [137123819476589] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/main/Gunung/AutoSummit/GunungSakahayang/Csx.lua",
+local games = {
+    [126244816328678] = "https://raw.githubusercontent.com/MajestySkie/DIG/refs/heads/main/DigDigDig.lua",
+    [129827112113663] = "https://raw.githubusercontent.com/MajestySkie/Prospecting/refs/heads/main/Prscting.lua",
 }
 
-return Games
+local currentID = game.PlaceId
+local scriptURL = games[currentID]
+
+if scriptURL then
+    loadstring(game:HttpGet(scriptURL))()
+else
+    game.Players.LocalPlayer:Kick("Yo! This game ain't on the list.\nCheck the Discord for whitelisted games, homie.")
+end
