@@ -1,5 +1,5 @@
 local Gunung = loadstring(game:HttpGet("https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Mount.lua"))()
-local Tower = loadstring(game:HttpGet("https://github"))()
+local Games = loadstring(game:HttpGet("https://github"))()
 
 local URL = Gunung[game.PlaceId] or Tower[game.PlaceId]
 
