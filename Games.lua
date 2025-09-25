@@ -6,10 +6,8 @@ local Gunung = {
   [130117824356035] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Gunung/AutoSummit/GunungNisara/Gwa.lua",  -- Mount Nisara
   [82321750197896] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Idk/Ziaan/PoopABrainRot/Lol.lua", -- PoopABrainRot
   [75763972512400] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Gunung/AutoSummit/GunungRamah/Krptorngentd.lua",  -- "Mount Ramah"
-  [142823291] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Idk/Ziaan/MurderMisteriBrek/Csx.lua",  -- "Mm2
+  [142823291] = "https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Idk/Ziaaan/Mm2/P.lua",  -- "Mm2
 
 }
 
 return Gunung
-
-https://raw.githubusercontent.com/Hatsuga-HOST/ZiaanHub/refs/heads/main/Idk/Ziaan/MurderMisteriBrek/Csx.lua
